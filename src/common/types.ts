@@ -1,0 +1,1 @@
+export type GameFormation = 'single' | 'triple' | 'wall-to-wall';

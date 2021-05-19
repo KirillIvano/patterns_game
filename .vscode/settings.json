@@ -1,0 +1,17 @@
+{
+    "scss.validate": false,
+
+    "eslint.run": "onSave",
+    "eslint.format.enable": true,
+    "typescript.format.enable": true,
+    
+    "editor.formatOnSaveMode": "modifications",
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true
+    },
+
+    "files.associations": {
+        "*.js": "javascript",
+        "*.ts": "typescript"
+    }
+}
