@@ -1,15 +1,32 @@
-import { GameFormation } from "../../common/types";
-
 export type UnitDto = {
-    id: number;
-}
-export type ArmyDto = UnitDto[];
-export type GameConfig = {
-    formation: GameFormation,
-    fellowArmy: ArmyDto,
-    enemyArmy: ArmyDto,
+    id: string;
 }
 
-export class Game {
-    constructor(private gameConfig: GameConfig) {}
+export type GameFormation = 'single_row' | 'single_col' | 'three_rows';
+export type GameParams = {
+    formation: GameFormation;
+    ally: UnitDto[],
+    enemy: UnitDto[],
+}
+export type GameParamsDto = {
+    formation: GameFormation;
+    ally?: UnitDto[],
+    enemy?: UnitDto[],
+}
+export type GameCommand = {
+    type: string;
+    payload: Record<string, any>
+}
+export type GameResult = {
+    history: GameCommand[][];
+}
+
+export interface IGame {
+    run: (params: GameParams) => void
+}
+
+export class Game implements IGame {
+    run(params: GameParams) {
+
+    }
 }

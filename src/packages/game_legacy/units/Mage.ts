@@ -3,12 +3,11 @@ import {UnitMeta} from './UnitMeta';
 
 export const mageMeta = new UnitMeta();
 
-export class Mage implements IUnit {
-    private meta = mageMeta;
 
-    constructor() {
+class Healer {
+    private human: Human;
+
+    heal() {
 
     }
-
-
 }
