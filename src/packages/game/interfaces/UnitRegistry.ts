@@ -1,5 +1,5 @@
-export class UnitRegistry {
-    createUnit() {
+import {IUnit} from './IUnit';
 
-    }
-}
+const unitRegistry = {
+
+};

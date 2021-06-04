@@ -1,9 +1,8 @@
-export class Army {
+import {IUnit} from './IUnit';
 
-}
-
-export class ArmyFactory {
-    createArmyByFormation(): Army {
-
-    }
+export interface IArmy {
+    getRowsCount(): number;
+    getRowByInd(): IUnit[];
+    getAllRows(): IUnit[][];
+    getNeighbours(unit: IUnit): IUnit[];
 }

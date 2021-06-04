@@ -1,6 +1,6 @@
-import {IUnit} from './IUnit';
+import {IArmy} from './IArmy';
 
 export interface IField {
-    getRandomNeighbour(unit: IUnit): void;
-    getNeighbourOfType(unit: IUnit, neighbourType: new () => IUnit): void;
+    readonly ally: IArmy,
+    readonly enemy: IArmy,
 }
