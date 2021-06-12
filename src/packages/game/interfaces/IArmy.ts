@@ -148,8 +148,6 @@ export class Army implements IArmy {
 
 
     cleanup() {
-        console.log(this._rows);
-
         for (const {ally, enemy} of this._rows) {
             const allyHead = ally.lookup() as IUnit;
             const enemyHead = enemy.lookup() as IUnit;
@@ -180,7 +178,7 @@ export class Army implements IArmy {
         }
 
         for (let i = toBeCleared.length - 1; i >= 0; i--) {
-            this._rows.splice(i, 1);
+            this._rows.splice(toBeCleared[i], 1);
         }
 
         if (!this._rows.length) {

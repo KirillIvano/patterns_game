@@ -104,11 +104,13 @@ const mockAllyField = [
     [HEALER_KEY, KNIGHT_KEY],
     [ARCHER_KEY, KNIGHT_KEY],
     [WHEEL_KEY, KNIGHT_KEY],
+    [FELLOW_KEY, KNIGHT_KEY],
 ];
 const mockEnemyField = [
     [HEALER_KEY, KNIGHT_KEY],
     [ARCHER_KEY, KNIGHT_KEY],
     [WHEEL_KEY, KNIGHT_KEY],
+    [FELLOW_KEY, KNIGHT_KEY],
 ];
 
 export const startGame = () => {
