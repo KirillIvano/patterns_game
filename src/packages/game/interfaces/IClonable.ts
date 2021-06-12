@@ -1,4 +1,4 @@
-import {IUnit} from '@/packages/game/interfaces/IUnit';
+import {IUnit} from 'src/packages/game/interfaces/IUnit';
 import {IArmy} from './IArmy';
 
 export interface IClonable extends IUnit {

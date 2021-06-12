@@ -1,0 +1,26 @@
+.unit {
+    height: 200px;
+    padding: 10px;
+    position: absolute;
+    width: max-content;
+    
+    transition: transform .3s;
+
+    &_ally {
+        right: 0;
+    }
+
+    .unit__image-wrapper {
+        height: 100px;
+
+        overflow-y: hidden;
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        .unit__image {
+            height: 100%;
+        }
+    }
+}

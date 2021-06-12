@@ -63,6 +63,7 @@ export class Game implements IGame {
         return history;
     }
 
+    // TODO: several rows
     shot(field: IArmy): GameSnapshot {
         const res = [];
 
@@ -92,17 +93,13 @@ export class Game implements IGame {
 
         //TODO: add abilities
     }
-
-    runAbilities() {
-
-    }
 }
 
 const mockAlly = [HEALER_KEY, KNIGHT_KEY] as const;
 const mockEnemy = [HEALER_KEY, KNIGHT_KEY] as const;
 
 
-const startGame = () => {
+export const startGame = () => {
     const game = new Game();
 
     const factory = new UnitFactory();
@@ -115,8 +112,5 @@ const startGame = () => {
         formation: 'single_row',
     });
 
-    console.log(JSON.stringify(gameResults[gameResults.length - 1], null, '  '));
+    return gameResults;
 };
-
-
-startGame();

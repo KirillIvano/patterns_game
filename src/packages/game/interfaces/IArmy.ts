@@ -1,8 +1,9 @@
-import {GameFormation} from '@/common/types';
+import {GameFormation} from 'src/common/types';
+
 import {randomBranch} from '../utils/randomBranch';
 import {randomClamp} from '../utils/randomClamp';
-import {IRowEntry} from './IRowEntry';
 
+import {IRowEntry} from './IRowEntry';
 import {IUnit} from './IUnit';
 
 
@@ -184,8 +185,8 @@ export class Army implements IArmy {
             this._rows.push({ally: new UnitRow(), enemy: new UnitRow()});
         }
 
-        this._rows[0].ally.push(...allyStash);
-        this._rows[0].enemy.push(...enemyStash);
+        this._rows[0].ally.unshift(...allyStash);
+        this._rows[0].enemy.unshift(...enemyStash);
     }
 
     check(): boolean {

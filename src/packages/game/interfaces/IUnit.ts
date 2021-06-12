@@ -1,8 +1,9 @@
+import {UnitKey} from '../shared/UnitFactory';
 import {IArmy} from './IArmy';
 
 
 export type UnitMeta = {
-    unitType: string;
+    unitType: UnitKey;
     name: string;
     cost: number;
     maxHealth: number;
@@ -15,7 +16,7 @@ export type UnitMeta = {
 }
 
 export type IUnitSnapshot = {
-    unitType: string;
+    unitType: UnitKey;
     health: number;
     attack: number;
     defence: number;

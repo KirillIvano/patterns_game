@@ -11,7 +11,7 @@ import {getUniqueId} from '../utils/getUniqueId';
 export const ARCHER_KEY = 'ARCHER' as const;
 export const archerMeta = {
     unitType: ARCHER_KEY,
-    name: 'Лучник',
+    name: 'Лукист',
     cost: 10,
     maxHealth: 50,
     baseAttack: 10,

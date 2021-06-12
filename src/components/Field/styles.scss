@@ -1,0 +1,21 @@
+.field {
+    --field-height: 1;
+
+    display: flex;
+
+    height: calc(200 * var(--field-height));
+
+    .field__row {
+        flex: 0 0 50%;
+        padding: 0 50px;
+        position: relative;
+
+        &_left {
+            justify-content: flex-end;
+        }
+    
+        &_right {
+            justify-content: flex-start;
+        }
+    }
+}
