@@ -7,7 +7,7 @@ import {UNIT_IMAGE_REGISTRY} from './images';
 import './styles.scss';
 
 
-type UnitProps = {
+export type UnitProps = {
     posY: number;
     posX: number;
     side: 'ally' | 'enemy';

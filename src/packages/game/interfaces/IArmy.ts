@@ -148,6 +148,8 @@ export class Army implements IArmy {
 
 
     cleanup() {
+        console.log(this._rows);
+
         for (const {ally, enemy} of this._rows) {
             const allyHead = ally.lookup() as IUnit;
             const enemyHead = enemy.lookup() as IUnit;

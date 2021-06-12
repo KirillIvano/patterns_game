@@ -2,6 +2,7 @@ import {IUnit, IUnitSnapshot} from '../interfaces/IUnit';
 
 import {SnapshotBehavior} from '../behaviors/SnapshotBehavior';
 import {getUniqueId} from '../utils/getUniqueId';
+import {HitBehavior} from '../behaviors/HitBehavior';
 
 
 export const WHEEL_KEY = 'WHEEL' as const;
@@ -11,7 +12,7 @@ export const wheelMeta = {
     cost: 10,
     maxHealth: 300,
     baseAttack: 0,
-    baseDefence: 100,
+    baseDefence: 0,
     healable: false,
     clonable: false,
     pluggable: false,
@@ -20,6 +21,7 @@ export const wheelMeta = {
 
 export class Wheel implements IUnit {
     private readonly snashotBehavior = new SnapshotBehavior();
+    private readonly hitBehavior = new HitBehavior();
 
     id = getUniqueId();
     meta = wheelMeta;
@@ -29,11 +31,11 @@ export class Wheel implements IUnit {
     defence = this.meta.baseDefence;
 
     performSpecial() {}
-    performAttack(unit: IUnit) {
-        unit.hit(this.attackPower);
-    }
+    performAttack() {}
 
-    hit(): void {}
+    hit(amount: number): void {
+        this.hitBehavior.hit(this, amount);
+    }
     snapshot(): IUnitSnapshot {
         return this.snashotBehavior.shot(this);
     }

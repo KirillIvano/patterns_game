@@ -1,8 +1,12 @@
 import {Army, IArmy} from './interfaces/IArmy';
 import {IUnit, IUnitSnapshot} from './interfaces/IUnit';
 import {UnitFactory} from './shared/UnitFactory';
+import {ARCHER_KEY} from './units/Archer';
+import {FELLOW_KEY} from './units/Fellow';
 import {HEALER_KEY} from './units/Healer';
 import {KNIGHT_KEY} from './units/Knight';
+import {MAGE_KEY} from './units/Mage';
+import {WHEEL_KEY} from './units/Wheel';
 
 export type UnitDto = {
     id: string;
@@ -37,10 +41,7 @@ export interface IGame {
     run: (params: GameParams) => void
 }
 
-
-class StepContext {
-
-}
+const MAX_STEPS = 100;
 
 export class Game implements IGame {
     run = (params: GameParams): GameSnapshot[] => {
@@ -51,8 +52,12 @@ export class Game implements IGame {
         );
 
         const history = [this.shot(gameField)];
+        let step = 0;
 
         while (!gameField.check()) {
+            step++;
+            if (step > MAX_STEPS) break;
+
             this.step(gameField);
             gameField.cleanup();
 
@@ -95,20 +100,27 @@ export class Game implements IGame {
     }
 }
 
-const mockAlly = [HEALER_KEY, KNIGHT_KEY] as const;
-const mockEnemy = [HEALER_KEY, KNIGHT_KEY] as const;
-
+const mockAllyField = [
+    [HEALER_KEY, KNIGHT_KEY],
+    [ARCHER_KEY, KNIGHT_KEY],
+    [WHEEL_KEY, KNIGHT_KEY],
+];
+const mockEnemyField = [
+    [HEALER_KEY, KNIGHT_KEY],
+    [ARCHER_KEY, KNIGHT_KEY],
+    [WHEEL_KEY, KNIGHT_KEY],
+];
 
 export const startGame = () => {
     const game = new Game();
 
     const factory = new UnitFactory();
-    const ally = mockAlly.map(id => factory.get(id));
-    const enemy = mockEnemy.map(id => factory.get(id));
+    const ally = mockAllyField.map(r => r.map(id => factory.get(id)));
+    const enemy = mockEnemyField.map(r => r.map(id => factory.get(id)));
 
     const gameResults = game.run({
-        ally: [ally],
-        enemy: [enemy],
+        ally,
+        enemy,
         formation: 'single_row',
     });
 

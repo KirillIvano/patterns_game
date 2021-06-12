@@ -12,8 +12,9 @@
 
     .unit__image-wrapper {
         height: 100px;
-
-        overflow-y: hidden;
+        max-width: 100px;
+        
+        overflow: hidden;
 
         display: flex;
         justify-content: center;
