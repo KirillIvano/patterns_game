@@ -12,6 +12,8 @@ import {IArmy} from '../interfaces/IArmy';
 import {IPluggable} from '../interfaces/IPluggable';
 import {ShieldPlugin} from '../plugins/ShieldPlugin';
 import {getUniqueId} from '../utils/getUniqueId';
+import {randomBranch} from '../utils/randomBranch';
+import {PineResinPlugin} from '../plugins/PineResinPlugin';
 
 
 export const FELLOW_KEY = 'FELLOW' as const;
@@ -56,7 +58,9 @@ export class Fellow implements IUnit, ICurable, IClonable {
 
             ctx.addSpecialCommand(this.id, plugableUnit.id, 'plug');
 
-            plugableUnit.plug(new ShieldPlugin());
+            const plugin = randomBranch() ? new ShieldPlugin() : new PineResinPlugin();
+
+            plugableUnit.plug(plugin);
         }
     }
 

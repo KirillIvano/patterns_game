@@ -1,20 +1,20 @@
 import {IPlugin, PluginMeta} from '../interfaces/IPlugin';
 import {IUnit} from '../interfaces/IUnit';
 
+
 export const shieldMeta: PluginMeta = {
     id: 'shield',
-    fragility: .2,
+    fragility: .5,
 };
-
 
 export class ShieldPlugin implements IPlugin {
     meta = shieldMeta;
 
     set(unit: IUnit) {
-        unit.defence += 10;
+        unit.defence += 2;
     }
 
     remove(unit: IUnit) {
-        unit.defence -= 10;
+        unit.defence -= 2;
     }
 }

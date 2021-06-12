@@ -23,6 +23,12 @@ export type IUnitSnapshot = {
     id: number;
 }
 
+
+export type SpecialType = 'cure' | 'clone' | 'attack' | 'plug';
+export interface Ctx {
+    addSpecialCommand(source: number, target: number, type: SpecialType): void;
+}
+
 export interface IUnit {
     // unique random identifier
     id: number;
@@ -30,7 +36,7 @@ export interface IUnit {
     meta: UnitMeta;
 
     // спец способность
-    performSpecial(army: IArmy): void;
+    performSpecial(ctx: Ctx, army: IArmy): void;
     // атака конкретного юнита
     performAttack(target: IUnit): void;
     // получить стейт юнита
