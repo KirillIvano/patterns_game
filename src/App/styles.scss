@@ -5,7 +5,8 @@
 
     .shadow {
         position: absolute;
-
+        pointer-events: none;
+    
         top: 0;
         bottom: 0;
 
