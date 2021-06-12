@@ -1,9 +1,8 @@
 .field {
-    --field-height: 1;
+    margin-top: 24px;
 
     display: flex;
-
-    height: calc(200 * var(--field-height));
+    position: relative;
 
     .field__row {
         flex: 0 0 50%;

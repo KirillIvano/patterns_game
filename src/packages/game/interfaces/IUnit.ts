@@ -25,6 +25,11 @@ export type IUnitSnapshot = {
 
 
 export type SpecialType = 'cure' | 'clone' | 'attack' | 'plug';
+export type SpecialHistoryEntry = {
+    source: number;
+    target: number;
+    type: SpecialType;
+}
 export interface Ctx {
     addSpecialCommand(source: number, target: number, type: SpecialType): void;
 }

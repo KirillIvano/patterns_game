@@ -3,17 +3,30 @@ import React, {useState} from 'react';
 
 import {GameSnapshot, startGame} from 'src/packages/game/Game';
 import './styles.scss';
+import {SpecialHistoryEntry} from 'src/packages/game/interfaces/IUnit';
+
+
+const Preview = ({handleClick}: {handleClick: () => void}) => {
+    return (
+        <div style={{padding: '100px 20px', display: 'flex', justifyContent: 'center'}}>
+            <button className="button" onClick={handleClick}>Generate</button>
+        </div>
+    );
+};
 
 const App = () => {
     const [history, setHistory] = useState<null | GameSnapshot[]>(null);
+    const [perksHistory, setPerksHistory] = useState<null | SpecialHistoryEntry[][]>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
 
     const handleClick = () => {
-        const res = startGame();
-        setHistory(res);
+        const {history, perksHistory} = startGame();
+
+        setHistory(history);
+        setPerksHistory(perksHistory);
     };
 
-    if (!history) return <button className="button" onClick={handleClick}>kek</button>;
+    if (!history || !perksHistory) return <Preview handleClick={handleClick} />;
 
     const handlePrev = () => setCurrentIndex(s => Math.max(0, s - 1));
     const handleNext = () => setCurrentIndex(s => Math.min(history.length - 1, s + 1));
@@ -47,7 +60,13 @@ const App = () => {
                 </button>
             </div>
 
-            <Field snapshot={history[currentIndex]} />
+            <Field
+                prevPerks={perksHistory[currentIndex - 1] ?? []}
+                snapshot={history[currentIndex]}
+            />
+
+            <div className="shadow shadow_left"></div>
+            <div className="shadow shadow_right"></div>
         </div>
     );
 };

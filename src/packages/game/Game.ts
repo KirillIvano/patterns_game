@@ -1,10 +1,10 @@
 import {Army, IArmy} from './interfaces/IArmy';
-import {Ctx, IUnit, IUnitSnapshot, SpecialType} from './interfaces/IUnit';
+import {Ctx, IUnit, IUnitSnapshot, SpecialHistoryEntry} from './interfaces/IUnit';
 import {UnitFactory} from './shared/UnitFactory';
 import {ARCHER_KEY} from './units/Archer';
 import {FELLOW_KEY} from './units/Fellow';
 import {HEALER_KEY} from './units/Healer';
-import {knightMeta, KNIGHT_KEY} from './units/Knight';
+import {KNIGHT_KEY} from './units/Knight';
 import {MAGE_KEY} from './units/Mage';
 import {WHEEL_KEY} from './units/Wheel';
 import {runWithProbability} from './utils/runWithProbability';
@@ -29,13 +29,6 @@ export type GameParamsDto = {
     ally?: UnitDto[],
     enemy?: UnitDto[],
 }
-export type GameCommand = {
-    type: string;
-    payload: Record<string, any>
-}
-export type GameResult = {
-    history: GameCommand[][];
-}
 export type GameSnapshot = [IUnitSnapshot[], IUnitSnapshot[]][];
 
 export interface IGame {
@@ -45,7 +38,7 @@ export interface IGame {
 const MAX_STEPS = 100;
 
 export class Game implements IGame {
-    run = (params: GameParams): GameSnapshot[] => {
+    run = (params: GameParams): {history: GameSnapshot[], perksHistory: SpecialHistoryEntry[][]} => {
         const gameField = new Army(
             params.ally,
             params.enemy,
@@ -53,20 +46,31 @@ export class Game implements IGame {
         );
 
         const history = [this.shot(gameField)];
+        const perksHistory: SpecialHistoryEntry[][] = [];
+
         let step = 0;
 
         while (!gameField.check()) {
             step++;
             if (step > MAX_STEPS) break;
 
-            this.step(gameField);
+            const stepPerks: SpecialHistoryEntry[] = [];
+            const stepContext: Ctx = {
+                addSpecialCommand(i, j, t) {
+                    stepPerks.push({source: i, target: j, type: t});
+                },
+            };
+
+            this.step(gameField, stepContext);
             gameField.cleanup();
 
             const shot = this.shot(gameField);
+
             history.push(shot);
+            perksHistory.push(stepPerks);
         }
 
-        return history;
+        return {history, perksHistory};
     }
 
     // TODO: several rows
@@ -85,7 +89,7 @@ export class Game implements IGame {
         return res as GameSnapshot;
     }
 
-    step(field: IArmy) {
+    step(field: IArmy, stepContext: Ctx) {
         const selectedAttackerIterator = field.getRandomHead();
         const attackerUnit = selectedAttackerIterator.unit();
         const selectedAttackerSide = selectedAttackerIterator.getSide();
@@ -96,14 +100,6 @@ export class Game implements IGame {
 
         attackerUnit.performAttack(enemyUnit);
         if (enemyUnit.health > 0) enemyUnit.performAttack(attackerUnit);
-
-        //TODO: abilities usage
-        const stepPerks: Array<{source: number, target: number, type: SpecialType}> = [];
-        const stepContext: Ctx = {
-            addSpecialCommand(i, j, t) {
-                stepPerks.push({source: i, target: j, type: t});
-            },
-        };
 
         const rows = field.getAll();
         for (const row of rows) {
