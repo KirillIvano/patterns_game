@@ -1,7 +1,7 @@
 import {ICurable} from '../interfaces/ICurable';
 import {IClonable} from '../interfaces/IClonable';
 import {IPlugin} from '../interfaces/IPlugin';
-import {IUnit, IUnitSnapshot} from '../interfaces/IUnit';
+import {Ctx, IUnit, IUnitSnapshot} from '../interfaces/IUnit';
 
 import {CureBehavior} from '../behaviors/CureBehavior';
 import {HitBehavior} from '../behaviors/HitBehavior';
@@ -20,12 +20,12 @@ export const fellowMeta = {
     name: 'Пехотинец',
     cost: 10,
     maxHealth: 100,
-    baseAttack: 10,
-    baseDefence: 30,
+    baseAttack: 20,
+    baseDefence: 10,
     healable: true,
     clonable: false,
     pluggable: false,
-    specialProbability: 0,
+    specialProbability: 0.1,
 };
 
 export class Fellow implements IUnit, ICurable, IClonable {
@@ -43,7 +43,7 @@ export class Fellow implements IUnit, ICurable, IClonable {
     defence = this.meta.baseDefence;
 
     // plugs neighbour
-    performSpecial(army: IArmy) {
+    performSpecial(ctx: Ctx, army: IArmy) {
         const armyEntry = army.getIteratorForUnit(this);
 
         const pluggableNeighbour = [
@@ -52,7 +52,11 @@ export class Fellow implements IUnit, ICurable, IClonable {
         ].filter(x => x?.unit().meta.pluggable)[0];
 
         if (pluggableNeighbour) {
-            (pluggableNeighbour.unit() as IPluggable).plug(new ShieldPlugin(), this);
+            const plugableUnit = pluggableNeighbour.unit() as IPluggable;
+
+            ctx.addSpecialCommand(this.id, plugableUnit.id, 'plug');
+
+            plugableUnit.plug(new ShieldPlugin());
         }
     }
 

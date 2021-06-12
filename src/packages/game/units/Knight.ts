@@ -17,8 +17,8 @@ export const knightMeta = {
     name: 'Рыцарь',
     cost: 10,
     maxHealth: 100,
-    baseAttack: 50,
-    baseDefence: 30,
+    baseAttack: 30,
+    baseDefence: 15,
     healable: true,
     clonable: false,
     pluggable: true,
@@ -55,6 +55,9 @@ export class Knight implements IUnit, ICurable, IPluggable {
         }
     }
     plug(plugin: IPlugin): void {
+        if (this.plugin) return;
+
+        plugin.set(this);
         this.plugin = plugin;
     }
     cure(amount: number) {

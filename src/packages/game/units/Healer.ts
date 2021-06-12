@@ -1,5 +1,5 @@
 import {ICurable} from '../interfaces/ICurable';
-import {IUnit, IUnitSnapshot} from '../interfaces/IUnit';
+import {Ctx, IUnit, IUnitSnapshot} from '../interfaces/IUnit';
 
 import {CureBehavior} from '../behaviors/CureBehavior';
 import {HitBehavior} from '../behaviors/HitBehavior';
@@ -15,12 +15,12 @@ export const healerMeta = {
     name: 'Хилер',
     cost: 10,
     maxHealth: 20,
-    baseAttack: 5,
+    baseAttack: 30,
     baseDefence: 5,
     healable: true,
     clonable: false,
     pluggable: false,
-    specialProbability: .1,
+    specialProbability: .2,
 };
 
 export class Healer implements IUnit, ICurable {
@@ -36,7 +36,7 @@ export class Healer implements IUnit, ICurable {
     defence = this.meta.baseDefence;
 
     // heals neighbour
-    performSpecial(army: IArmy) {
+    performSpecial(ctx: Ctx, army: IArmy) {
         const armyEntry = army.getIteratorForUnit(this);
 
         const curableNeighbour = [
@@ -45,7 +45,11 @@ export class Healer implements IUnit, ICurable {
         ].filter(x => x?.unit().meta.healable)[0];
 
         if (curableNeighbour) {
-            (curableNeighbour.unit() as ICurable).cure(10, this);
+            const curableUnit = curableNeighbour.unit() as ICurable;
+
+            ctx.addSpecialCommand(this.id, curableUnit.id, 'cure');
+
+            curableUnit.cure(10);
         }
     }
     performAttack(unit: IUnit) {

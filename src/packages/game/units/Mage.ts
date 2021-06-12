@@ -1,4 +1,4 @@
-import {IUnit, IUnitSnapshot} from '../interfaces/IUnit';
+import {Ctx, IUnit, IUnitSnapshot} from '../interfaces/IUnit';
 
 import {HitBehavior} from '../behaviors/HitBehavior';
 import {SnapshotBehavior} from '../behaviors/SnapshotBehavior';
@@ -18,7 +18,7 @@ export const mageMeta = {
     healable: false,
     clonable: false,
     pluggable: false,
-    specialProbability: .4,
+    specialProbability: .1,
 };
 
 export class Mage implements IUnit {
@@ -33,7 +33,7 @@ export class Mage implements IUnit {
     defence = this.meta.baseDefence;
 
     // clones neighbour
-    performSpecial(army: IArmy) {
+    performSpecial(ctx: Ctx, army: IArmy) {
         const armyEntry = army.getIteratorForUnit(this);
 
         const clonableNeighbour = [
@@ -42,7 +42,11 @@ export class Mage implements IUnit {
         ].filter(x => x?.unit().meta.clonable)[0];
 
         if (clonableNeighbour) {
-            (clonableNeighbour.unit() as IClonable).clone(army, this);
+            const clonableUnit = clonableNeighbour.unit() as IClonable;
+
+            ctx.addSpecialCommand(this.id, clonableUnit.id, 'clone');
+
+            clonableUnit.clone(army);
         }
     }
 

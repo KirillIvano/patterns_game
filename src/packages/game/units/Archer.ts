@@ -1,4 +1,4 @@
-import {IUnit, IUnitSnapshot} from '../interfaces/IUnit';
+import {Ctx, IUnit, IUnitSnapshot} from '../interfaces/IUnit';
 
 import {CureBehavior} from '../behaviors/CureBehavior';
 import {HitBehavior} from '../behaviors/HitBehavior';
@@ -14,12 +14,12 @@ export const archerMeta = {
     name: 'Лукист',
     cost: 10,
     maxHealth: 50,
-    baseAttack: 10,
-    baseDefence: 30,
+    baseAttack: 20,
+    baseDefence: 5,
     healable: true,
     clonable: true,
     pluggable: false,
-    specialProbability: .2,
+    specialProbability: .5,
 };
 
 export class Archer implements IUnit, IClonable, ICurable {
@@ -35,13 +35,15 @@ export class Archer implements IUnit, IClonable, ICurable {
     defence = this.meta.baseDefence;
 
     // hits first enemy in row
-    performSpecial(army: IArmy) {
+    performSpecial(ctx: Ctx, army: IArmy) {
         const unitEntry = army.getIteratorForUnit(this);
         const side = unitEntry.getSide();
 
         const enemy =  unitEntry.currentRow()[side === 'ally' ? 'enemy' : 'ally'].lookup();
 
         if (enemy) {
+            ctx.addSpecialCommand(this.id, enemy.id, 'attack');
+
             this.performAttack(enemy);
         }
     }

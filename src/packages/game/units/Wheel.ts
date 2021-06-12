@@ -12,7 +12,7 @@ export const wheelMeta = {
     cost: 10,
     maxHealth: 300,
     baseAttack: 0,
-    baseDefence: 0,
+    baseDefence: 7,
     healable: false,
     clonable: false,
     pluggable: false,
