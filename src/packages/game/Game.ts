@@ -1,12 +1,13 @@
 import {Army, IArmy} from './interfaces/IArmy';
-import {IUnit, IUnitSnapshot} from './interfaces/IUnit';
+import {Ctx, IUnit, IUnitSnapshot, SpecialType} from './interfaces/IUnit';
 import {UnitFactory} from './shared/UnitFactory';
 import {ARCHER_KEY} from './units/Archer';
 import {FELLOW_KEY} from './units/Fellow';
 import {HEALER_KEY} from './units/Healer';
-import {KNIGHT_KEY} from './units/Knight';
+import {knightMeta, KNIGHT_KEY} from './units/Knight';
 import {MAGE_KEY} from './units/Mage';
 import {WHEEL_KEY} from './units/Wheel';
+import {runWithProbability} from './utils/runWithProbability';
 
 export type UnitDto = {
     id: string;
@@ -96,19 +97,48 @@ export class Game implements IGame {
         attackerUnit.performAttack(enemyUnit);
         if (enemyUnit.health > 0) enemyUnit.performAttack(attackerUnit);
 
-        //TODO: add abilities
+        //TODO: abilities usage
+        const stepPerks: Array<{source: number, target: number, type: SpecialType}> = [];
+        const stepContext: Ctx = {
+            addSpecialCommand(i, j, t) {
+                stepPerks.push({source: i, target: j, type: t});
+            },
+        };
+
+        const rows = field.getAll();
+        for (const row of rows) {
+            const {ally, enemy} = row;
+
+            for (let i = 0; i < ally.length - 1; i++) {
+                const unit = ally[i];
+
+                runWithProbability(
+                    () => unit.performSpecial(stepContext, field),
+                    unit.meta.specialProbability,
+                );
+            }
+
+            for (let i = 0; i < enemy.length - 1; i++) {
+                const unit = enemy[i];
+
+                runWithProbability(
+                    () => unit.performSpecial(stepContext, field),
+                    unit.meta.specialProbability,
+                );
+            }
+        }
     }
 }
 
 const mockAllyField = [
     [HEALER_KEY, KNIGHT_KEY],
-    [ARCHER_KEY, KNIGHT_KEY],
+    [MAGE_KEY, ARCHER_KEY, KNIGHT_KEY],
     [WHEEL_KEY, KNIGHT_KEY],
     [FELLOW_KEY, KNIGHT_KEY],
 ];
 const mockEnemyField = [
     [HEALER_KEY, KNIGHT_KEY],
-    [ARCHER_KEY, KNIGHT_KEY],
+    [MAGE_KEY, ARCHER_KEY, KNIGHT_KEY],
     [WHEEL_KEY, KNIGHT_KEY],
     [FELLOW_KEY, KNIGHT_KEY],
 ];
