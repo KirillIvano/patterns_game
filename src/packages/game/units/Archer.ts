@@ -35,8 +35,9 @@ export class Archer implements IUnit, IClonable, ICurable {
     // hits first enemy in row
     performSpecial(army: IArmy) {
         const unitEntry = army.getIteratorForUnit(this);
+        const side = unitEntry.getSide();
 
-        const enemy =  unitEntry.currentRow().enemy.lookup();
+        const enemy =  unitEntry.currentRow()[side === 'ally' ? 'enemy' : 'ally'].lookup();
 
         if (enemy) {
             this.performAttack(enemy);

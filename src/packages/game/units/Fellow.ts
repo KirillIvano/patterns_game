@@ -10,6 +10,7 @@ import {SnapshotBehavior} from '../behaviors/SnapshotBehavior';
 import {runWithProbability} from '../utils/runWithProbability';
 import {IArmy} from '../interfaces/IArmy';
 import {IPluggable} from '../interfaces/IPluggable';
+import {ShieldPlugin} from '../plugins/ShieldPlugin';
 
 
 export const FELLOW_KEY = 'FELLOW' as const;
@@ -49,7 +50,7 @@ export class Fellow implements IUnit, ICurable, IClonable {
         ].filter(x => x?.unit().meta.pluggable)[0];
 
         if (pluggableNeighbour) {
-            (pluggableNeighbour.unit() as IPluggable);
+            (pluggableNeighbour.unit() as IPluggable).plug(new ShieldPlugin(), this);
         }
     }
 
@@ -63,7 +64,7 @@ export class Fellow implements IUnit, ICurable, IClonable {
         if (this.plugin) {
             runWithProbability(
                 () => (this.plugin as IPlugin).remove(this),
-                this.plugin?.meta.durability,
+                this.plugin?.meta.fragility,
             );
         }
     }

@@ -1,4 +1,5 @@
-import {IField} from './IField';
+import {IArmy} from './IArmy';
+
 
 export type UnitMeta = {
     unitType: string;
@@ -9,11 +10,11 @@ export type UnitMeta = {
     baseDefence: number;
     healable: boolean;
     clonable: boolean;
-    buffable: boolean;
+    pluggable: boolean;
     specialProbability: number;
 }
 
-export type UnitSnapshot = {
+export type IUnitSnapshot = {
     unitType: string;
     health: number;
     attack: number;
@@ -24,11 +25,12 @@ export interface IUnit {
     meta: UnitMeta;
 
     // спец способность
-    performSpecial(army: IField): void;
+    performSpecial(army: IArmy): void;
     // атака конкретного юнита
-    performAttack(unit: IUnit, army: IField): void;
+    performAttack(target: IUnit): void;
     // получить стейт юнита
-    snapshot(): UnitSnapshot;
+    snapshot(): IUnitSnapshot;
+    hit(amount: number): void;
 
     // текущий уровень здоровья юнита
     health: number;

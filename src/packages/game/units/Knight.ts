@@ -16,7 +16,7 @@ export const knightMeta = {
     name: 'Рыцарь',
     cost: 10,
     maxHealth: 100,
-    baseAttack: 10,
+    baseAttack: 50,
     baseDefence: 30,
     healable: true,
     clonable: false,
@@ -48,7 +48,7 @@ export class Knight implements IUnit, ICurable, IPluggable {
         if (this.plugin) {
             runWithProbability(
                 () => (this.plugin as IPlugin).remove(this),
-                this.plugin?.meta.durability,
+                this.plugin?.meta.fragility,
             );
         }
     }
