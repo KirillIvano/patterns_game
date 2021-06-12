@@ -4,6 +4,7 @@ import {IUnit, IUnitSnapshot} from '../interfaces/IUnit';
 import {CureBehavior} from '../behaviors/CureBehavior';
 import {HitBehavior} from '../behaviors/HitBehavior';
 import {SnapshotBehavior} from '../behaviors/SnapshotBehavior';
+import {getUniqueId} from '../utils/getUniqueId';
 
 import {IArmy} from '../interfaces/IArmy';
 
@@ -27,6 +28,7 @@ export class Healer implements IUnit, ICurable {
     private readonly cureBehavior = new CureBehavior();
     private readonly snashotBehavior = new SnapshotBehavior();
 
+    id = getUniqueId();
     meta = healerMeta;
 
     health = this.meta.maxHealth;

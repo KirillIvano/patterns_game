@@ -7,6 +7,7 @@ export class SnapshotBehavior {
             health: target.health,
             attack: target.attackPower,
             defence: target.defence,
+            id: target.id,
         };
     }
 }

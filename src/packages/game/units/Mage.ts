@@ -4,6 +4,7 @@ import {HitBehavior} from '../behaviors/HitBehavior';
 import {SnapshotBehavior} from '../behaviors/SnapshotBehavior';
 import {IArmy} from '../interfaces/IArmy';
 import {IClonable} from '../interfaces/IClonable';
+import {getUniqueId} from '../utils/getUniqueId';
 
 
 export const MAGE_KEY = 'MAGE' as const;
@@ -24,6 +25,7 @@ export class Mage implements IUnit {
     private readonly hitBehavior = new HitBehavior();
     private readonly snashotBehavior = new SnapshotBehavior();
 
+    id = getUniqueId();
     meta = mageMeta;
 
     health = this.meta.maxHealth;

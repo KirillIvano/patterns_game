@@ -1,6 +1,7 @@
 import {IUnit, IUnitSnapshot} from '../interfaces/IUnit';
 
 import {SnapshotBehavior} from '../behaviors/SnapshotBehavior';
+import {getUniqueId} from '../utils/getUniqueId';
 
 
 export const WHEEL_KEY = 'WHEEL' as const;
@@ -20,6 +21,7 @@ export const wheelMeta = {
 export class Wheel implements IUnit {
     private readonly snashotBehavior = new SnapshotBehavior();
 
+    id = getUniqueId();
     meta = wheelMeta;
 
     health = this.meta.maxHealth;

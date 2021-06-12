@@ -1,6 +1,7 @@
 import {Army, IArmy} from './interfaces/IArmy';
 import {IUnit, IUnitSnapshot} from './interfaces/IUnit';
 import {UnitFactory} from './shared/UnitFactory';
+import {HEALER_KEY} from './units/Healer';
 import {KNIGHT_KEY} from './units/Knight';
 
 export type UnitDto = {
@@ -36,21 +37,30 @@ export interface IGame {
     run: (params: GameParams) => void
 }
 
+
+class StepContext {
+
+}
+
 export class Game implements IGame {
-    run = (params: GameParams) => {
+    run = (params: GameParams): GameSnapshot[] => {
         const gameField = new Army(
             params.ally,
             params.enemy,
             'single',
         );
 
-        while (!gameField.check()) {
-            console.log(JSON.stringify(this.shot(gameField)));
-            this.step(gameField);
-            console.log(JSON.stringify(this.shot(gameField)));
+        const history = [this.shot(gameField)];
 
+        while (!gameField.check()) {
+            this.step(gameField);
             gameField.cleanup();
+
+            const shot = this.shot(gameField);
+            history.push(shot);
         }
+
+        return history;
     }
 
     shot(field: IArmy): GameSnapshot {
@@ -79,11 +89,17 @@ export class Game implements IGame {
 
         attackerUnit.performAttack(enemyUnit);
         if (enemyUnit.health > 0) enemyUnit.performAttack(attackerUnit);
+
+        //TODO: add abilities
+    }
+
+    runAbilities() {
+
     }
 }
 
-const mockAlly = [KNIGHT_KEY, KNIGHT_KEY] as const;
-const mockEnemy = [KNIGHT_KEY, KNIGHT_KEY] as const;
+const mockAlly = [HEALER_KEY, KNIGHT_KEY] as const;
+const mockEnemy = [HEALER_KEY, KNIGHT_KEY] as const;
 
 
 const startGame = () => {
@@ -93,11 +109,13 @@ const startGame = () => {
     const ally = mockAlly.map(id => factory.get(id));
     const enemy = mockEnemy.map(id => factory.get(id));
 
-    game.run({
+    const gameResults = game.run({
         ally: [ally],
         enemy: [enemy],
         formation: 'single_row',
     });
+
+    console.log(JSON.stringify(gameResults[gameResults.length - 1], null, '  '));
 };
 
 

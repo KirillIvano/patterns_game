@@ -11,6 +11,7 @@ import {runWithProbability} from '../utils/runWithProbability';
 import {IArmy} from '../interfaces/IArmy';
 import {IPluggable} from '../interfaces/IPluggable';
 import {ShieldPlugin} from '../plugins/ShieldPlugin';
+import {getUniqueId} from '../utils/getUniqueId';
 
 
 export const FELLOW_KEY = 'FELLOW' as const;
@@ -34,6 +35,7 @@ export class Fellow implements IUnit, ICurable, IClonable {
 
     private plugin: IPlugin | null = null;
 
+    id = getUniqueId();
     meta = fellowMeta;
 
     health = this.meta.maxHealth;

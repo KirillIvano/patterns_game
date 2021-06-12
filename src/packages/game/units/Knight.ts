@@ -6,6 +6,7 @@ import {IUnit, IUnitSnapshot} from '../interfaces/IUnit';
 import {CureBehavior} from '../behaviors/CureBehavior';
 import {HitBehavior} from '../behaviors/HitBehavior';
 import {SnapshotBehavior} from '../behaviors/SnapshotBehavior';
+import {getUniqueId} from '../utils/getUniqueId';
 
 import {runWithProbability} from '../utils/runWithProbability';
 
@@ -31,6 +32,7 @@ export class Knight implements IUnit, ICurable, IPluggable {
 
     private plugin: IPlugin | null = null;
 
+    id = getUniqueId();
     meta = knightMeta;
 
     health = this.meta.maxHealth;

@@ -19,9 +19,13 @@ export type IUnitSnapshot = {
     health: number;
     attack: number;
     defence: number;
+    id: number;
 }
 
 export interface IUnit {
+    // unique random identifier
+    id: number;
+
     meta: UnitMeta;
 
     // спец способность

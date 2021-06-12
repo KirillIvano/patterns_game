@@ -151,11 +151,8 @@ export class Army implements IArmy {
             const allyHead = ally.lookup() as IUnit;
             const enemyHead = enemy.lookup() as IUnit;
 
-            console.log('******', allyHead.health);
-            console.log('******', enemyHead.health);
-
-            if (allyHead.health < 0) ally.pop();
-            if (enemyHead.health < 0) enemy.pop();
+            if (allyHead.health <= 0) ally.pop();
+            if (enemyHead.health <= 0) enemy.pop();
         }
 
         this.reorder();
@@ -179,12 +176,16 @@ export class Army implements IArmy {
             toBeCleared.push(i);
         }
 
-        for (const ind of toBeCleared) this._rows.splice(ind, 1);
-
-        if (this._rows.length) {
-            this._rows[0].ally.push(...allyStash);
-            this._rows[0].enemy.push(...enemyStash);
+        for (let i = toBeCleared.length - 1; i >= 0; i--) {
+            this._rows.splice(i, 1);
         }
+
+        if (!this._rows.length) {
+            this._rows.push({ally: new UnitRow(), enemy: new UnitRow()});
+        }
+
+        this._rows[0].ally.push(...allyStash);
+        this._rows[0].enemy.push(...enemyStash);
     }
 
     check(): boolean {

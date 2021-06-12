@@ -6,6 +6,7 @@ import {SnapshotBehavior} from '../behaviors/SnapshotBehavior';
 import {ICurable} from '../interfaces/ICurable';
 import {IClonable} from '../interfaces/IClonable';
 import {IArmy} from '../interfaces/IArmy';
+import {getUniqueId} from '../utils/getUniqueId';
 
 export const ARCHER_KEY = 'ARCHER' as const;
 export const archerMeta = {
@@ -26,6 +27,7 @@ export class Archer implements IUnit, IClonable, ICurable {
     private readonly cureBehavior = new CureBehavior();
     private readonly snashotBehavior = new SnapshotBehavior();
 
+    id = getUniqueId();
     meta = archerMeta;
 
     health = this.meta.maxHealth;
