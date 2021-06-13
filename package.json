@@ -5,6 +5,7 @@
   "description": "",
   "main": "./dist/index.html",
   "scripts": {
+    "dev": "parcel serve ./src/index.html",
     "predeploy": "parcel build ./src/index.html --public-url ./",
     "deploy": "gh-pages -d dist"
   },
