@@ -26346,7 +26346,252 @@ try {
   window.$RefreshSig$ = prevRefreshSig;
 }
 
-},{"react":"3b2NM","./styles.scss":"IvQN6","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y","../../node_modules/@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"4Jj4f","src/components/Preview":"1PPMb","src/components/SelectArmy":"6kXqH","src/packages/game/Game":"1TUi6","src/components/GameField":"3Qyhv"}],"IvQN6":[function() {},{}],"5gA8y":[function(require,module,exports) {
+},{"react":"3b2NM","src/packages/game/Game":"1TUi6","./styles.scss":"IvQN6","src/components/Preview":"1PPMb","src/components/SelectArmy":"6kXqH","src/components/GameField":"3Qyhv","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y","../../node_modules/@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"4Jj4f"}],"1TUi6":[function(require,module,exports) {
+var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+_parcelHelpers.defineInteropFlag(exports);
+_parcelHelpers.export(exports, "Game", function () {
+  return Game;
+});
+_parcelHelpers.export(exports, "startGame", function () {
+  return startGame;
+});
+var _interfacesIArmy = require('./interfaces/IArmy');
+var _sharedUnitFactory = require('./shared/UnitFactory');
+var _utilsRunWithProbability = require('./utils/runWithProbability');
+const MAX_STEPS = 100;
+class Game {
+  run = params => {
+    const gameField = new _interfacesIArmy.Army(params.ally, params.enemy, 'single');
+    const history = [this.shot(gameField)];
+    const perksHistory = [];
+    let step = 0;
+    while (!gameField.check()) {
+      step++;
+      if (step > MAX_STEPS) break;
+      const stepPerks = [];
+      const stepContext = {
+        addSpecialCommand(i, j, t) {
+          stepPerks.push({
+            source: i,
+            target: j,
+            type: t
+          });
+        }
+      };
+      this.step(gameField, stepContext);
+      gameField.cleanup();
+      const shot = this.shot(gameField);
+      history.push(shot);
+      perksHistory.push(stepPerks);
+    }
+    return {
+      history,
+      perksHistory
+    };
+  };
+  // TODO: several rows
+  shot(field) {
+    const res = [];
+    const rows = field.getAll();
+    for (const row of rows) {
+      res.push([row.ally.map(u => u.snapshot()), row.enemy.map(u => u.snapshot())]);
+    }
+    return res;
+  }
+  step(field, stepContext) {
+    const selectedAttackerIterator = field.getRandomHead();
+    const attackerUnit = selectedAttackerIterator.unit();
+    const selectedAttackerSide = selectedAttackerIterator.getSide();
+    const enemySide = selectedAttackerSide === 'ally' ? 'enemy' : 'ally';
+    const enemyUnit = selectedAttackerIterator.currentRow()[enemySide].lookup();
+    if (enemyUnit) {
+      attackerUnit.performAttack(enemyUnit);
+      if (enemyUnit.health > 0) enemyUnit.performAttack(attackerUnit);
+    }
+    const rows = field.getAll();
+    for (const row of rows) {
+      const {ally, enemy} = row;
+      for (let i = 0; i < ally.length - 1; i++) {
+        const unit = ally[i];
+        _utilsRunWithProbability.runWithProbability(() => unit.performSpecial(stepContext, field), unit.meta.specialProbability);
+      }
+      for (let i = 0; i < enemy.length - 1; i++) {
+        const unit = enemy[i];
+        _utilsRunWithProbability.runWithProbability(() => unit.performSpecial(stepContext, field), unit.meta.specialProbability);
+      }
+    }
+  }
+}
+const prepareArmy = (army, size = 4) => {
+  const [fAlly, fEnemy] = army;
+  const rAlly = Array.from({
+    length: size
+  }, () => []);
+  const rEnemy = Array.from({
+    length: size
+  }, () => []);
+  for (let i = 0; i < fAlly.length; i++) {
+    rAlly[i % 4].push(fAlly[i]);
+  }
+  for (let i = 0; i < fEnemy.length; i++) {
+    rEnemy[i % 4].push(fEnemy[i]);
+  }
+  return [rAlly, rEnemy];
+};
+const startGame = (army, size = 4) => {
+  const game = new Game();
+  const [preparedAlly, preparedEnemy] = prepareArmy(army, size);
+  const factory = new _sharedUnitFactory.UnitFactory();
+  const ally = preparedAlly.map(r => r.map(id => factory.get(id)));
+  const enemy = preparedEnemy.map(r => r.map(id => factory.get(id)));
+  const gameResults = game.run({
+    ally,
+    enemy,
+    formation: 'single_row'
+  });
+  return gameResults;
+};
+
+},{"./interfaces/IArmy":"6tjsK","./shared/UnitFactory":"3vGaY","./utils/runWithProbability":"6F2Gz","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"6tjsK":[function(require,module,exports) {
+var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+_parcelHelpers.defineInteropFlag(exports);
+_parcelHelpers.export(exports, "RowEntry", function () {
+  return RowEntry;
+});
+_parcelHelpers.export(exports, "Army", function () {
+  return Army;
+});
+var _utilsRandomBranch = require('../utils/randomBranch');
+var _utilsRandomClamp = require('../utils/randomClamp');
+class UnitRow extends Array {
+  lookup() {
+    return this[this.length - 1];
+  }
+}
+class RowEntry {
+  constructor(_unit, _side, _row) {
+    this._unit = _unit;
+    this._side = _side;
+    this._row = _row;
+    this.allyRow = _row[_side];
+    this.currentIndex = _row[_side].indexOf(_unit);
+  }
+  currentRow() {
+    return this._row;
+  }
+  getSide() {
+    return this._side;
+  }
+  next() {
+    const next = this.allyRow[this.currentIndex + 1];
+    if (!next) return null;
+    return new RowEntry(next, this._side, this._row);
+  }
+  prev() {
+    const prev = this.allyRow[this.currentIndex - 1];
+    if (!prev) return null;
+    return new RowEntry(prev, this._side, this._row);
+  }
+  insertAfter(unit) {
+    this.allyRow.splice(this.currentIndex, 0, unit);
+  }
+  unit() {
+    return this._unit;
+  }
+}
+class Army {
+  constructor(ally, enemies, formation) {
+    this.formation = formation;
+    this._rows = this.prepareRows(ally, enemies);
+  }
+  getAll() {
+    return this._rows;
+  }
+  getIteratorForUnit(unit) {
+    for (let i = 0; i < this._rows.length; i++) {
+      for (const side of ['ally', 'enemy']) {
+        for (let j = 0; j < this._rows[i][side].length; j++) {
+          if (this._rows[i][side][j] === unit) {
+            return new RowEntry(unit, side, this._rows[i]);
+          }
+        }
+      }
+    }
+    throw new Error('Iterator not found');
+  }
+  prepareRows(ally, enemy) {
+    const rows = [];
+    const len = Math.max(ally.length, enemy.length);
+    for (let i = 0; i < len; i++) {
+      rows.push({
+        ally: new UnitRow(...ally[i]),
+        enemy: new UnitRow(...enemy[i])
+      });
+    }
+    return rows;
+  }
+  getRandomHead() {
+    let entry = null;
+    while (!entry) {
+      const rowsLen = this._rows.length;
+      const rowInd = _utilsRandomClamp.randomClamp(0, rowsLen - 1);
+      const side = _utilsRandomBranch.randomBranch() ? 'ally' : 'enemy';
+      const unit = this._rows[rowInd][side].lookup();
+      if (unit) {
+        entry = new RowEntry(unit, side, this._rows[rowInd]);
+      }
+    }
+    return entry;
+  }
+  cleanup() {
+    for (const {ally, enemy} of this._rows) {
+      const allyHead = ally.lookup();
+      const enemyHead = enemy.lookup();
+      if (allyHead && allyHead.health <= 0) ally.pop();
+      if (enemyHead && enemyHead.health <= 0) enemy.pop();
+    }
+    this.reorder();
+  }
+  reorder() {
+    const allyStash = [];
+    const enemyStash = [];
+    const toBeCleared = [];
+    const initialRowsLen = this._rows.length;
+    for (let i = 0; i < initialRowsLen; i++) {
+      const {ally, enemy} = this._rows[i];
+      if (ally.length && enemy.length) continue;
+      if (!ally.length) enemyStash.push(...enemy);
+      if (!enemy.length) allyStash.push(...ally);
+      toBeCleared.push(i);
+    }
+    for (let i = toBeCleared.length - 1; i >= 0; i--) {
+      this._rows.splice(toBeCleared[i], 1);
+    }
+    if (!this._rows.length) {
+      this._rows.push({
+        ally: new UnitRow(),
+        enemy: new UnitRow()
+      });
+    }
+    this._rows[0].ally.unshift(...allyStash);
+    this._rows[0].enemy.unshift(...enemyStash);
+  }
+  check() {
+    if (!this._rows.length) return true;
+    if (this._rows.length > 1) return false;
+    return this._rows[0].ally.length === 0 || this._rows[0].enemy.length === 0;
+  }
+}
+
+},{"../utils/randomBranch":"2hEY9","../utils/randomClamp":"39Yuk","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"2hEY9":[function(require,module,exports) {
+var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+_parcelHelpers.defineInteropFlag(exports);
+_parcelHelpers.export(exports, "randomBranch", function () {
+  return randomBranch;
+});
+const randomBranch = () => Math.random() < 0.5;
+
+},{"@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"5gA8y":[function(require,module,exports) {
 "use strict";
 
 exports.interopDefault = function (a) {
@@ -26388,362 +26633,19 @@ exports.export = function (dest, destName, get) {
     get: get
   });
 };
-},{}],"4Jj4f":[function(require,module,exports) {
-"use strict";
-var Refresh = require('react-refresh/runtime');
-function debounce(func, delay) {
-  if ("development" === 'test') {
-    return function (args) {
-      func.call(null, args);
-    };
-  } else {
-    var timeout = undefined;
-    return function (args) {
-      clearTimeout(timeout);
-      timeout = setTimeout(function () {
-        timeout = undefined;
-        func.call(null, args);
-      }, delay);
-    };
-  }
-}
-var enqueueUpdate = debounce(function () {
-  Refresh.performReactRefresh();
-}, 30);
-// Everthing below is either adapted or copied from
-// https://github.com/facebook/metro/blob/61de16bd1edd7e738dd0311c89555a644023ab2d/packages/metro/src/lib/polyfills/require.js
-// MIT License - Copyright (c) Facebook, Inc. and its affiliates.
-module.exports.prelude = function (module) {
-  window.$RefreshReg$ = function (type, id) {
-    Refresh.register(type, module.id + ' ' + id);
-  };
-  window.$RefreshSig$ = Refresh.createSignatureFunctionForTransform;
-};
-module.exports.postlude = function (module) {
-  if (isReactRefreshBoundary(module.exports)) {
-    registerExportsForReactRefresh(module);
-    if (module.hot) {
-      module.hot.dispose(function (data) {
-        if (Refresh.hasUnrecoverableErrors()) {
-          window.location.reload();
-        }
-        data.prevExports = module.exports;
-      });
-      module.hot.accept(function (getParents) {
-        var prevExports = module.hot.data.prevExports;
-        var nextExports = module.exports;
-        // Since we just executed the code for it, it's possible
-        // that the new exports make it ineligible for being a boundary.
-        var isNoLongerABoundary = !isReactRefreshBoundary(nextExports);
-        // It can also become ineligible if its exports are incompatible
-        // with the previous exports.
-        // For example, if you add/remove/change exports, we'll want
-        // to re-execute the importing modules, and force those components
-        // to re-render. Similarly, if you convert a class component
-        // to a function, we want to invalidate the boundary.
-        var didInvalidate = shouldInvalidateReactRefreshBoundary(prevExports, nextExports);
-        if (isNoLongerABoundary || didInvalidate) {
-          // We'll be conservative. The only case in which we won't do a full
-          // reload is if all parent modules are also refresh boundaries.
-          // In that case we'll add them to the current queue.
-          var parents = getParents();
-          if (parents.length === 0) {
-            // Looks like we bubbled to the root. Can't recover from that.
-            window.location.reload();
-            return;
-          }
-          return parents;
-        }
-        enqueueUpdate();
-      });
-    }
-  }
-};
-function isReactRefreshBoundary(exports) {
-  if (Refresh.isLikelyComponentType(exports)) {
-    return true;
-  }
-  if (exports == null || typeof exports !== 'object') {
-    // Exit if we can't iterate over exports.
-    return false;
-  }
-  var hasExports = false;
-  var areAllExportsComponents = true;
-  let isESM = ('__esModule' in exports);
-  for (var key in exports) {
-    hasExports = true;
-    if (key === '__esModule') {
-      continue;
-    }
-    var desc = Object.getOwnPropertyDescriptor(exports, key);
-    if (desc && desc.get && !isESM) {
-      // Don't invoke getters for CJS as they may have side effects.
-      return false;
-    }
-    var exportValue = exports[key];
-    if (!Refresh.isLikelyComponentType(exportValue)) {
-      areAllExportsComponents = false;
-    }
-  }
-  return hasExports && areAllExportsComponents;
-}
-function shouldInvalidateReactRefreshBoundary(prevExports, nextExports) {
-  var prevSignature = getRefreshBoundarySignature(prevExports);
-  var nextSignature = getRefreshBoundarySignature(nextExports);
-  if (prevSignature.length !== nextSignature.length) {
-    return true;
-  }
-  for (var i = 0; i < nextSignature.length; i++) {
-    if (prevSignature[i] !== nextSignature[i]) {
-      return true;
-    }
-  }
-  return false;
-}
-// When this signature changes, it's unsafe to stop at this refresh boundary.
-function getRefreshBoundarySignature(exports) {
-  var signature = [];
-  signature.push(Refresh.getFamilyByType(exports));
-  if (exports == null || typeof exports !== 'object') {
-    // Exit if we can't iterate over exports.
-    // (This is important for legacy environments.)
-    return signature;
-  }
-  let isESM = ('__esModule' in exports);
-  for (var key in exports) {
-    if (key === '__esModule') {
-      continue;
-    }
-    var desc = Object.getOwnPropertyDescriptor(exports, key);
-    if (desc && desc.get && !isESM) {
-      // Don't invoke getters for CJS as they may have side effects.
-      continue;
-    }
-    var exportValue = exports[key];
-    signature.push(key);
-    signature.push(Refresh.getFamilyByType(exportValue));
-  }
-  return signature;
-}
-function registerExportsForReactRefresh(module) {
-  var exports = module.exports, id = module.id;
-  Refresh.register(exports, id + ' %exports%');
-  if (exports == null || typeof exports !== 'object') {
-    // Exit if we can't iterate over exports.
-    // (This is important for legacy environments.)
-    return;
-  }
-  let isESM = ('__esModule' in exports);
-  for (var key in exports) {
-    var desc = Object.getOwnPropertyDescriptor(exports, key);
-    if (desc && desc.get && !isESM) {
-      // Don't invoke getters for CJS as they may have side effects.
-      continue;
-    }
-    var exportValue = exports[key];
-    Refresh.register(exportValue, id + ' %exports% ' + key);
-  }
-}
-
-},{"react-refresh/runtime":"592mh"}],"1PPMb":[function(require,module,exports) {
-var helpers = require("../../../node_modules/@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js");
-var prevRefreshReg = window.$RefreshReg$;
-var prevRefreshSig = window.$RefreshSig$;
-helpers.prelude(module);
-try {
-  var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-  _parcelHelpers.defineInteropFlag(exports);
-  _parcelHelpers.export(exports, "Preview", function () {
-    return Preview;
-  });
-  var _react = require('react');
-  var _reactDefault = _parcelHelpers.interopDefault(_react);
-  var _jsxFileName = "/Users/wgwergwegwer/patterns_game/src/components/Preview/index.tsx";
-  const Preview = ({handleClick}) => /*#__PURE__*/_reactDefault.default.createElement("div", {
-    style: {
-      padding: '100px 20px',
-      display: 'flex',
-      justifyContent: 'center'
-    },
-    __self: undefined,
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 5,
-      columnNumber: 5
-    }
-  }, /*#__PURE__*/_reactDefault.default.createElement("button", {
-    className: "button",
-    onClick: handleClick,
-    __self: undefined,
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 6,
-      columnNumber: 9
-    }
-  }, "START"));
-  _c = Preview;
-  var _c;
-  $RefreshReg$(_c, "Preview");
-  helpers.postlude(module);
-} finally {
-  window.$RefreshReg$ = prevRefreshReg;
-  window.$RefreshSig$ = prevRefreshSig;
-}
-
-},{"react":"3b2NM","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y","../../../node_modules/@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"4Jj4f"}],"6kXqH":[function(require,module,exports) {
-var helpers = require("../../../node_modules/@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js");
-var prevRefreshReg = window.$RefreshReg$;
-var prevRefreshSig = window.$RefreshSig$;
-helpers.prelude(module);
-try {
-  var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-  _parcelHelpers.defineInteropFlag(exports);
-  _parcelHelpers.export(exports, "SelectArmy", function () {
-    return SelectArmy;
-  });
-  var _react = require('react');
-  var _reactDefault = _parcelHelpers.interopDefault(_react);
-  var _srcPackagesGameSharedMetaRegistry = require('src/packages/game/shared/MetaRegistry');
-  var _jsxFileName = "/Users/wgwergwegwer/patterns_game/src/components/SelectArmy/index.tsx", _s = $RefreshSig$();
-  const UNIT_KEYS = Object.keys(_srcPackagesGameSharedMetaRegistry.META_REGISTRY);
-  const COST = 100;
-  const DEFAULT_STATE = {
-    cost: 0,
-    items: []
-  };
-  const SelectArmy = ({onSelect}) => {
-    _s();
-    const [army, dispatch] = _react.useReducer((state, action) => {
-      switch (action.type) {
-        case 'ADD':
-          return {
-            cost: state.cost + _srcPackagesGameSharedMetaRegistry.META_REGISTRY[action.payload].cost,
-            items: [...state.items, action.payload]
-          };
-        case 'RESET':
-          return DEFAULT_STATE;
-      }
-    }, DEFAULT_STATE);
-    const addUnit = k => dispatch({
-      type: 'ADD',
-      payload: k
-    });
-    const reset = () => dispatch({
-      type: 'RESET',
-      payload: null
-    });
-    return (
-      /*#__PURE__*/_reactDefault.default.createElement("div", {
-        __self: undefined,
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 53,
-          columnNumber: 9
-        }
-      }, /*#__PURE__*/_reactDefault.default.createElement("div", {
-        className: "button-row",
-        __self: undefined,
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 54,
-          columnNumber: 13
-        }
-      }, /*#__PURE__*/_reactDefault.default.createElement("button", {
-        className: "button",
-        disabled: !army.items.length,
-        onClick: reset,
-        __self: undefined,
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 55,
-          columnNumber: 17
-        }
-      }, "Reset"), /*#__PURE__*/_reactDefault.default.createElement("button", {
-        className: "button",
-        disabled: !army.items.length,
-        onClick: () => onSelect([army.items, army.items]),
-        __self: undefined,
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 63,
-          columnNumber: 17
-        }
-      }, "Submit")), /*#__PURE__*/_reactDefault.default.createElement("div", {
-        className: "button-row",
-        __self: undefined,
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 72,
-          columnNumber: 13
-        }
-      }, UNIT_KEYS.map(k => /*#__PURE__*/_reactDefault.default.createElement("button", {
-        className: "button",
-        key: k,
-        disabled: army.cost >= COST,
-        onClick: () => addUnit(k),
-        __self: undefined,
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 74,
-          columnNumber: 21
-        }
-      }, "Add ", k))), /*#__PURE__*/_reactDefault.default.createElement("div", {
-        style: {
-          textAlign: 'center'
-        },
-        __self: undefined,
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 85,
-          columnNumber: 13
-        }
-      }, /*#__PURE__*/_reactDefault.default.createElement("p", {
-        __self: undefined,
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 86,
-          columnNumber: 17
-        }
-      }, "maxCost: ", COST), /*#__PURE__*/_reactDefault.default.createElement("p", {
-        __self: undefined,
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 87,
-          columnNumber: 17
-        }
-      }, "current: ", army.cost), /*#__PURE__*/_reactDefault.default.createElement("ul", {
-        __self: undefined,
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 89,
-          columnNumber: 17
-        }
-      }, "units:", army.items.map((k, i) => /*#__PURE__*/_reactDefault.default.createElement("li", {
-        key: i,
-        __self: undefined,
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 92,
-          columnNumber: 25
-        }
-      }, k)))))
-    );
-  };
-  _s(SelectArmy, "8wnWNZP7T0gjn/y2nUFRTGzkQaY=");
-  _c = SelectArmy;
-  var _c;
-  $RefreshReg$(_c, "SelectArmy");
-  helpers.postlude(module);
-} finally {
-  window.$RefreshReg$ = prevRefreshReg;
-  window.$RefreshSig$ = prevRefreshSig;
-}
-
-},{"react":"3b2NM","src/packages/game/shared/MetaRegistry":"4wr3M","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y","../../../node_modules/@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"4Jj4f"}],"4wr3M":[function(require,module,exports) {
+},{}],"39Yuk":[function(require,module,exports) {
 var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
 _parcelHelpers.defineInteropFlag(exports);
-_parcelHelpers.export(exports, "META_REGISTRY", function () {
-  return META_REGISTRY;
+_parcelHelpers.export(exports, "randomClamp", function () {
+  return randomClamp;
+});
+const randomClamp = (from, to) => Math.floor(Math.random() * (to - from + 1) + from);
+
+},{"@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"3vGaY":[function(require,module,exports) {
+var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+_parcelHelpers.defineInteropFlag(exports);
+_parcelHelpers.export(exports, "UnitFactory", function () {
+  return UnitFactory;
 });
 var _unitsArcher = require('../units/Archer');
 var _unitsFellow = require('../units/Fellow');
@@ -26751,14 +26653,20 @@ var _unitsHealer = require('../units/Healer');
 var _unitsKnight = require('../units/Knight');
 var _unitsMage = require('../units/Mage');
 var _unitsWheel = require('../units/Wheel');
-const META_REGISTRY = {
-  [_unitsKnight.KNIGHT_KEY]: _unitsKnight.knightMeta,
-  [_unitsArcher.ARCHER_KEY]: _unitsArcher.archerMeta,
-  [_unitsWheel.WHEEL_KEY]: _unitsWheel.wheelMeta,
-  [_unitsMage.MAGE_KEY]: _unitsMage.mageMeta,
-  [_unitsHealer.HEALER_KEY]: _unitsHealer.healerMeta,
-  [_unitsFellow.FELLOW_KEY]: _unitsFellow.fellowMeta
+const KEY_TO_CLASS = {
+  [_unitsKnight.KNIGHT_KEY]: _unitsKnight.Knight,
+  [_unitsArcher.ARCHER_KEY]: _unitsArcher.Archer,
+  [_unitsWheel.WHEEL_KEY]: _unitsWheel.Wheel,
+  [_unitsMage.MAGE_KEY]: _unitsMage.Mage,
+  [_unitsHealer.HEALER_KEY]: _unitsHealer.Healer,
+  [_unitsFellow.FELLOW_KEY]: _unitsFellow.Fellow
 };
+const instancifyUnit = key => new KEY_TO_CLASS[key]();
+class UnitFactory {
+  get(key) {
+    return instancifyUnit(key);
+  }
+}
 
 },{"../units/Archer":"4al9g","../units/Fellow":"4gKP9","../units/Healer":"6MGMz","../units/Knight":"5ZX9O","../units/Mage":"6wrc4","../units/Wheel":"BCIaH","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"4al9g":[function(require,module,exports) {
 var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
@@ -26993,14 +26901,6 @@ class ShieldPlugin {
     unit.defence -= 2;
   }
 }
-
-},{"@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"2hEY9":[function(require,module,exports) {
-var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-_parcelHelpers.defineInteropFlag(exports);
-_parcelHelpers.export(exports, "randomBranch", function () {
-  return randomBranch;
-});
-const randomBranch = () => Math.random() < 0.5;
 
 },{"@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"3QbtV":[function(require,module,exports) {
 var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
@@ -27253,256 +27153,362 @@ class Wheel {
   }
 }
 
-},{"../behaviors/SnapshotBehavior":"093cO","../utils/getUniqueId":"11pCG","../behaviors/HitBehavior":"6jjJw","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"1TUi6":[function(require,module,exports) {
-var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-_parcelHelpers.defineInteropFlag(exports);
-_parcelHelpers.export(exports, "Game", function () {
-  return Game;
-});
-_parcelHelpers.export(exports, "startGame", function () {
-  return startGame;
-});
-var _interfacesIArmy = require('./interfaces/IArmy');
-var _sharedUnitFactory = require('./shared/UnitFactory');
-var _utilsRunWithProbability = require('./utils/runWithProbability');
-const MAX_STEPS = 100;
-class Game {
-  run = params => {
-    const gameField = new _interfacesIArmy.Army(params.ally, params.enemy, 'single');
-    const history = [this.shot(gameField)];
-    const perksHistory = [];
-    let step = 0;
-    while (!gameField.check()) {
-      step++;
-      if (step > MAX_STEPS) break;
-      const stepPerks = [];
-      const stepContext = {
-        addSpecialCommand(i, j, t) {
-          stepPerks.push({
-            source: i,
-            target: j,
-            type: t
-          });
-        }
-      };
-      this.step(gameField, stepContext);
-      gameField.cleanup();
-      const shot = this.shot(gameField);
-      history.push(shot);
-      perksHistory.push(stepPerks);
-    }
-    return {
-      history,
-      perksHistory
-    };
-  };
-  // TODO: several rows
-  shot(field) {
-    const res = [];
-    const rows = field.getAll();
-    for (const row of rows) {
-      res.push([row.ally.map(u => u.snapshot()), row.enemy.map(u => u.snapshot())]);
-    }
-    return res;
-  }
-  step(field, stepContext) {
-    const selectedAttackerIterator = field.getRandomHead();
-    const attackerUnit = selectedAttackerIterator.unit();
-    const selectedAttackerSide = selectedAttackerIterator.getSide();
-    const enemySide = selectedAttackerSide === 'ally' ? 'enemy' : 'ally';
-    const enemyUnit = selectedAttackerIterator.currentRow()[enemySide].lookup();
-    if (enemyUnit) {
-      attackerUnit.performAttack(enemyUnit);
-      if (enemyUnit.health > 0) enemyUnit.performAttack(attackerUnit);
-    }
-    const rows = field.getAll();
-    for (const row of rows) {
-      const {ally, enemy} = row;
-      for (let i = 0; i < ally.length - 1; i++) {
-        const unit = ally[i];
-        _utilsRunWithProbability.runWithProbability(() => unit.performSpecial(stepContext, field), unit.meta.specialProbability);
-      }
-      for (let i = 0; i < enemy.length - 1; i++) {
-        const unit = enemy[i];
-        _utilsRunWithProbability.runWithProbability(() => unit.performSpecial(stepContext, field), unit.meta.specialProbability);
-      }
-    }
-  }
-}
-const prepareArmy = (army, size = 4) => {
-  const [fAlly, fEnemy] = army;
-  const rAlly = Array.from({
-    length: size
-  }, () => []);
-  const rEnemy = Array.from({
-    length: size
-  }, () => []);
-  for (let i = 0; i < fAlly.length; i++) {
-    rAlly[i % 4].push(fAlly[i]);
-  }
-  for (let i = 0; i < fEnemy.length; i++) {
-    rEnemy[i % 4].push(fEnemy[i]);
-  }
-  return [rAlly, rEnemy];
-};
-const startGame = (army, size = 4) => {
-  const game = new Game();
-  const [preparedAlly, preparedEnemy] = prepareArmy(army, size);
-  const factory = new _sharedUnitFactory.UnitFactory();
-  const ally = preparedAlly.map(r => r.map(id => factory.get(id)));
-  const enemy = preparedEnemy.map(r => r.map(id => factory.get(id)));
-  const gameResults = game.run({
-    ally,
-    enemy,
-    formation: 'single_row'
+},{"../behaviors/SnapshotBehavior":"093cO","../utils/getUniqueId":"11pCG","../behaviors/HitBehavior":"6jjJw","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"IvQN6":[function() {},{}],"1PPMb":[function(require,module,exports) {
+var helpers = require("../../../node_modules/@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js");
+var prevRefreshReg = window.$RefreshReg$;
+var prevRefreshSig = window.$RefreshSig$;
+helpers.prelude(module);
+try {
+  var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+  _parcelHelpers.defineInteropFlag(exports);
+  _parcelHelpers.export(exports, "Preview", function () {
+    return Preview;
   });
-  return gameResults;
+  var _react = require('react');
+  var _reactDefault = _parcelHelpers.interopDefault(_react);
+  var _jsxFileName = "/Users/wgwergwegwer/patterns_game/src/components/Preview/index.tsx";
+  const Preview = ({handleClick}) => /*#__PURE__*/_reactDefault.default.createElement("div", {
+    style: {
+      padding: '100px 20px',
+      display: 'flex',
+      justifyContent: 'center'
+    },
+    __self: undefined,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 5,
+      columnNumber: 5
+    }
+  }, /*#__PURE__*/_reactDefault.default.createElement("button", {
+    className: "button",
+    onClick: handleClick,
+    __self: undefined,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 6,
+      columnNumber: 9
+    }
+  }, "START"));
+  _c = Preview;
+  var _c;
+  $RefreshReg$(_c, "Preview");
+  helpers.postlude(module);
+} finally {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
+
+},{"react":"3b2NM","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y","../../../node_modules/@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"4Jj4f"}],"4Jj4f":[function(require,module,exports) {
+"use strict";
+var Refresh = require('react-refresh/runtime');
+function debounce(func, delay) {
+  if ("development" === 'test') {
+    return function (args) {
+      func.call(null, args);
+    };
+  } else {
+    var timeout = undefined;
+    return function (args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(function () {
+        timeout = undefined;
+        func.call(null, args);
+      }, delay);
+    };
+  }
+}
+var enqueueUpdate = debounce(function () {
+  Refresh.performReactRefresh();
+}, 30);
+// Everthing below is either adapted or copied from
+// https://github.com/facebook/metro/blob/61de16bd1edd7e738dd0311c89555a644023ab2d/packages/metro/src/lib/polyfills/require.js
+// MIT License - Copyright (c) Facebook, Inc. and its affiliates.
+module.exports.prelude = function (module) {
+  window.$RefreshReg$ = function (type, id) {
+    Refresh.register(type, module.id + ' ' + id);
+  };
+  window.$RefreshSig$ = Refresh.createSignatureFunctionForTransform;
 };
-
-},{"./interfaces/IArmy":"6tjsK","./shared/UnitFactory":"3vGaY","./utils/runWithProbability":"6F2Gz","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"6tjsK":[function(require,module,exports) {
-var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-_parcelHelpers.defineInteropFlag(exports);
-_parcelHelpers.export(exports, "RowEntry", function () {
-  return RowEntry;
-});
-_parcelHelpers.export(exports, "Army", function () {
-  return Army;
-});
-var _utilsRandomBranch = require('../utils/randomBranch');
-var _utilsRandomClamp = require('../utils/randomClamp');
-class UnitRow extends Array {
-  lookup() {
-    return this[this.length - 1];
-  }
-}
-class RowEntry {
-  constructor(_unit, _side, _row) {
-    this._unit = _unit;
-    this._side = _side;
-    this._row = _row;
-    this.allyRow = _row[_side];
-    this.currentIndex = _row[_side].indexOf(_unit);
-  }
-  currentRow() {
-    return this._row;
-  }
-  getSide() {
-    return this._side;
-  }
-  next() {
-    const next = this.allyRow[this.currentIndex + 1];
-    if (!next) return null;
-    return new RowEntry(next, this._side, this._row);
-  }
-  prev() {
-    const prev = this.allyRow[this.currentIndex - 1];
-    if (!prev) return null;
-    return new RowEntry(prev, this._side, this._row);
-  }
-  insertAfter(unit) {
-    this.allyRow.splice(this.currentIndex, 0, unit);
-  }
-  unit() {
-    return this._unit;
-  }
-}
-class Army {
-  constructor(ally, enemies, formation) {
-    this.formation = formation;
-    this._rows = this.prepareRows(ally, enemies);
-  }
-  getAll() {
-    return this._rows;
-  }
-  getIteratorForUnit(unit) {
-    for (let i = 0; i < this._rows.length; i++) {
-      for (const side of ['ally', 'enemy']) {
-        for (let j = 0; j < this._rows[i][side].length; j++) {
-          if (this._rows[i][side][j] === unit) {
-            return new RowEntry(unit, side, this._rows[i]);
-          }
+module.exports.postlude = function (module) {
+  if (isReactRefreshBoundary(module.exports)) {
+    registerExportsForReactRefresh(module);
+    if (module.hot) {
+      module.hot.dispose(function (data) {
+        if (Refresh.hasUnrecoverableErrors()) {
+          window.location.reload();
         }
-      }
-    }
-    throw new Error('Iterator not found');
-  }
-  prepareRows(ally, enemy) {
-    const rows = [];
-    const len = Math.max(ally.length, enemy.length);
-    for (let i = 0; i < len; i++) {
-      rows.push({
-        ally: new UnitRow(...ally[i]),
-        enemy: new UnitRow(...enemy[i])
+        data.prevExports = module.exports;
+      });
+      module.hot.accept(function (getParents) {
+        var prevExports = module.hot.data.prevExports;
+        var nextExports = module.exports;
+        // Since we just executed the code for it, it's possible
+        // that the new exports make it ineligible for being a boundary.
+        var isNoLongerABoundary = !isReactRefreshBoundary(nextExports);
+        // It can also become ineligible if its exports are incompatible
+        // with the previous exports.
+        // For example, if you add/remove/change exports, we'll want
+        // to re-execute the importing modules, and force those components
+        // to re-render. Similarly, if you convert a class component
+        // to a function, we want to invalidate the boundary.
+        var didInvalidate = shouldInvalidateReactRefreshBoundary(prevExports, nextExports);
+        if (isNoLongerABoundary || didInvalidate) {
+          // We'll be conservative. The only case in which we won't do a full
+          // reload is if all parent modules are also refresh boundaries.
+          // In that case we'll add them to the current queue.
+          var parents = getParents();
+          if (parents.length === 0) {
+            // Looks like we bubbled to the root. Can't recover from that.
+            window.location.reload();
+            return;
+          }
+          return parents;
+        }
+        enqueueUpdate();
       });
     }
-    return rows;
   }
-  getRandomHead() {
-    let entry = null;
-    while (!entry) {
-      const rowsLen = this._rows.length;
-      const rowInd = _utilsRandomClamp.randomClamp(0, rowsLen - 1);
-      const side = _utilsRandomBranch.randomBranch() ? 'ally' : 'enemy';
-      const unit = this._rows[rowInd][side].lookup();
-      if (unit) {
-        entry = new RowEntry(unit, side, this._rows[rowInd]);
-      }
-    }
-    return entry;
+};
+function isReactRefreshBoundary(exports) {
+  if (Refresh.isLikelyComponentType(exports)) {
+    return true;
   }
-  cleanup() {
-    for (const {ally, enemy} of this._rows) {
-      const allyHead = ally.lookup();
-      const enemyHead = enemy.lookup();
-      if (allyHead && allyHead.health <= 0) ally.pop();
-      if (enemyHead && enemyHead.health <= 0) enemy.pop();
-    }
-    this.reorder();
+  if (exports == null || typeof exports !== 'object') {
+    // Exit if we can't iterate over exports.
+    return false;
   }
-  reorder() {
-    const allyStash = [];
-    const enemyStash = [];
-    const toBeCleared = [];
-    const initialRowsLen = this._rows.length;
-    for (let i = 0; i < initialRowsLen; i++) {
-      const {ally, enemy} = this._rows[i];
-      if (ally.length && enemy.length) continue;
-      if (!ally.length) enemyStash.push(...enemy);
-      if (!enemy.length) allyStash.push(...ally);
-      toBeCleared.push(i);
+  var hasExports = false;
+  var areAllExportsComponents = true;
+  let isESM = ('__esModule' in exports);
+  for (var key in exports) {
+    hasExports = true;
+    if (key === '__esModule') {
+      continue;
     }
-    for (let i = toBeCleared.length - 1; i >= 0; i--) {
-      this._rows.splice(toBeCleared[i], 1);
+    var desc = Object.getOwnPropertyDescriptor(exports, key);
+    if (desc && desc.get && !isESM) {
+      // Don't invoke getters for CJS as they may have side effects.
+      return false;
     }
-    if (!this._rows.length) {
-      this._rows.push({
-        ally: new UnitRow(),
-        enemy: new UnitRow()
-      });
+    var exportValue = exports[key];
+    if (!Refresh.isLikelyComponentType(exportValue)) {
+      areAllExportsComponents = false;
     }
-    this._rows[0].ally.unshift(...allyStash);
-    this._rows[0].enemy.unshift(...enemyStash);
   }
-  check() {
-    if (!this._rows.length) return true;
-    if (this._rows.length > 1) return false;
-    return this._rows[0].ally.length === 0 || this._rows[0].enemy.length === 0;
+  return hasExports && areAllExportsComponents;
+}
+function shouldInvalidateReactRefreshBoundary(prevExports, nextExports) {
+  var prevSignature = getRefreshBoundarySignature(prevExports);
+  var nextSignature = getRefreshBoundarySignature(nextExports);
+  if (prevSignature.length !== nextSignature.length) {
+    return true;
+  }
+  for (var i = 0; i < nextSignature.length; i++) {
+    if (prevSignature[i] !== nextSignature[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+// When this signature changes, it's unsafe to stop at this refresh boundary.
+function getRefreshBoundarySignature(exports) {
+  var signature = [];
+  signature.push(Refresh.getFamilyByType(exports));
+  if (exports == null || typeof exports !== 'object') {
+    // Exit if we can't iterate over exports.
+    // (This is important for legacy environments.)
+    return signature;
+  }
+  let isESM = ('__esModule' in exports);
+  for (var key in exports) {
+    if (key === '__esModule') {
+      continue;
+    }
+    var desc = Object.getOwnPropertyDescriptor(exports, key);
+    if (desc && desc.get && !isESM) {
+      // Don't invoke getters for CJS as they may have side effects.
+      continue;
+    }
+    var exportValue = exports[key];
+    signature.push(key);
+    signature.push(Refresh.getFamilyByType(exportValue));
+  }
+  return signature;
+}
+function registerExportsForReactRefresh(module) {
+  var exports = module.exports, id = module.id;
+  Refresh.register(exports, id + ' %exports%');
+  if (exports == null || typeof exports !== 'object') {
+    // Exit if we can't iterate over exports.
+    // (This is important for legacy environments.)
+    return;
+  }
+  let isESM = ('__esModule' in exports);
+  for (var key in exports) {
+    var desc = Object.getOwnPropertyDescriptor(exports, key);
+    if (desc && desc.get && !isESM) {
+      // Don't invoke getters for CJS as they may have side effects.
+      continue;
+    }
+    var exportValue = exports[key];
+    Refresh.register(exportValue, id + ' %exports% ' + key);
   }
 }
 
-},{"../utils/randomBranch":"2hEY9","../utils/randomClamp":"39Yuk","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"39Yuk":[function(require,module,exports) {
-var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-_parcelHelpers.defineInteropFlag(exports);
-_parcelHelpers.export(exports, "randomClamp", function () {
-  return randomClamp;
-});
-const randomClamp = (from, to) => Math.floor(Math.random() * (to - from + 1) + from);
+},{"react-refresh/runtime":"592mh"}],"6kXqH":[function(require,module,exports) {
+var helpers = require("../../../node_modules/@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js");
+var prevRefreshReg = window.$RefreshReg$;
+var prevRefreshSig = window.$RefreshSig$;
+helpers.prelude(module);
+try {
+  var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+  _parcelHelpers.defineInteropFlag(exports);
+  _parcelHelpers.export(exports, "SelectArmy", function () {
+    return SelectArmy;
+  });
+  var _react = require('react');
+  var _reactDefault = _parcelHelpers.interopDefault(_react);
+  var _srcPackagesGameSharedMetaRegistry = require('src/packages/game/shared/MetaRegistry');
+  var _jsxFileName = "/Users/wgwergwegwer/patterns_game/src/components/SelectArmy/index.tsx", _s = $RefreshSig$();
+  const UNIT_KEYS = Object.keys(_srcPackagesGameSharedMetaRegistry.META_REGISTRY);
+  const COST = 100;
+  const DEFAULT_STATE = {
+    cost: 0,
+    items: []
+  };
+  const SelectArmy = ({onSelect}) => {
+    _s();
+    const [army, dispatch] = _react.useReducer((state, action) => {
+      switch (action.type) {
+        case 'ADD':
+          return {
+            cost: state.cost + _srcPackagesGameSharedMetaRegistry.META_REGISTRY[action.payload].cost,
+            items: [...state.items, action.payload]
+          };
+        case 'RESET':
+          return DEFAULT_STATE;
+      }
+    }, DEFAULT_STATE);
+    const addUnit = k => dispatch({
+      type: 'ADD',
+      payload: k
+    });
+    const reset = () => dispatch({
+      type: 'RESET',
+      payload: null
+    });
+    return (
+      /*#__PURE__*/_reactDefault.default.createElement("div", {
+        __self: undefined,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 53,
+          columnNumber: 9
+        }
+      }, /*#__PURE__*/_reactDefault.default.createElement("div", {
+        className: "button-row",
+        __self: undefined,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 54,
+          columnNumber: 13
+        }
+      }, /*#__PURE__*/_reactDefault.default.createElement("button", {
+        className: "button",
+        disabled: !army.items.length,
+        onClick: reset,
+        __self: undefined,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 55,
+          columnNumber: 17
+        }
+      }, "Reset"), /*#__PURE__*/_reactDefault.default.createElement("button", {
+        className: "button",
+        disabled: !army.items.length,
+        onClick: () => onSelect([army.items, army.items]),
+        __self: undefined,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 63,
+          columnNumber: 17
+        }
+      }, "Submit")), /*#__PURE__*/_reactDefault.default.createElement("div", {
+        className: "button-row",
+        __self: undefined,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 72,
+          columnNumber: 13
+        }
+      }, UNIT_KEYS.map(k => /*#__PURE__*/_reactDefault.default.createElement("button", {
+        className: "button",
+        key: k,
+        disabled: army.cost >= COST,
+        onClick: () => addUnit(k),
+        __self: undefined,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 74,
+          columnNumber: 21
+        }
+      }, "Add ", k))), /*#__PURE__*/_reactDefault.default.createElement("div", {
+        style: {
+          textAlign: 'center'
+        },
+        __self: undefined,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 85,
+          columnNumber: 13
+        }
+      }, /*#__PURE__*/_reactDefault.default.createElement("p", {
+        __self: undefined,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 86,
+          columnNumber: 17
+        }
+      }, "maxCost: ", COST), /*#__PURE__*/_reactDefault.default.createElement("p", {
+        __self: undefined,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 87,
+          columnNumber: 17
+        }
+      }, "current: ", army.cost), /*#__PURE__*/_reactDefault.default.createElement("ul", {
+        __self: undefined,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 89,
+          columnNumber: 17
+        }
+      }, "units:", army.items.map((k, i) => /*#__PURE__*/_reactDefault.default.createElement("li", {
+        key: i,
+        __self: undefined,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 92,
+          columnNumber: 25
+        }
+      }, k)))))
+    );
+  };
+  _s(SelectArmy, "8wnWNZP7T0gjn/y2nUFRTGzkQaY=");
+  _c = SelectArmy;
+  var _c;
+  $RefreshReg$(_c, "SelectArmy");
+  helpers.postlude(module);
+} finally {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
 
-},{"@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"3vGaY":[function(require,module,exports) {
+},{"react":"3b2NM","src/packages/game/shared/MetaRegistry":"4wr3M","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y","../../../node_modules/@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"4Jj4f"}],"4wr3M":[function(require,module,exports) {
 var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
 _parcelHelpers.defineInteropFlag(exports);
-_parcelHelpers.export(exports, "UnitFactory", function () {
-  return UnitFactory;
+_parcelHelpers.export(exports, "META_REGISTRY", function () {
+  return META_REGISTRY;
 });
 var _unitsArcher = require('../units/Archer');
 var _unitsFellow = require('../units/Fellow');
@@ -27510,20 +27516,14 @@ var _unitsHealer = require('../units/Healer');
 var _unitsKnight = require('../units/Knight');
 var _unitsMage = require('../units/Mage');
 var _unitsWheel = require('../units/Wheel');
-const KEY_TO_CLASS = {
-  [_unitsKnight.KNIGHT_KEY]: _unitsKnight.Knight,
-  [_unitsArcher.ARCHER_KEY]: _unitsArcher.Archer,
-  [_unitsWheel.WHEEL_KEY]: _unitsWheel.Wheel,
-  [_unitsMage.MAGE_KEY]: _unitsMage.Mage,
-  [_unitsHealer.HEALER_KEY]: _unitsHealer.Healer,
-  [_unitsFellow.FELLOW_KEY]: _unitsFellow.Fellow
+const META_REGISTRY = {
+  [_unitsKnight.KNIGHT_KEY]: _unitsKnight.knightMeta,
+  [_unitsArcher.ARCHER_KEY]: _unitsArcher.archerMeta,
+  [_unitsWheel.WHEEL_KEY]: _unitsWheel.wheelMeta,
+  [_unitsMage.MAGE_KEY]: _unitsMage.mageMeta,
+  [_unitsHealer.HEALER_KEY]: _unitsHealer.healerMeta,
+  [_unitsFellow.FELLOW_KEY]: _unitsFellow.fellowMeta
 };
-const instancifyUnit = key => new KEY_TO_CLASS[key]();
-class UnitFactory {
-  get(key) {
-    return instancifyUnit(key);
-  }
-}
 
 },{"../units/Archer":"4al9g","../units/Fellow":"4gKP9","../units/Healer":"6MGMz","../units/Knight":"5ZX9O","../units/Mage":"6wrc4","../units/Wheel":"BCIaH","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"3Qyhv":[function(require,module,exports) {
 var helpers = require("../../../node_modules/@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js");
@@ -27602,12 +27602,22 @@ try {
           lineNumber: 42,
           columnNumber: 13
         }
-      }), /*#__PURE__*/_reactDefault.default.createElement("div", {
+      }), currentIndex === history.length - 1 && /*#__PURE__*/_reactDefault.default.createElement("div", {
+        style: {
+          textAlign: 'center'
+        },
+        __self: undefined,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 48,
+          columnNumber: 17
+        }
+      }, !history[currentIndex][0][0].length ? 'ALLY' : 'ENEMY', " WON"), /*#__PURE__*/_reactDefault.default.createElement("div", {
         className: "shadow shadow_left",
         __self: undefined,
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 47,
+          lineNumber: 53,
           columnNumber: 13
         }
       }), /*#__PURE__*/_reactDefault.default.createElement("div", {
@@ -27615,7 +27625,7 @@ try {
         __self: undefined,
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 48,
+          lineNumber: 54,
           columnNumber: 13
         }
       }))
