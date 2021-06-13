@@ -1,0 +1,124 @@
+.app__field {
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+}
+.app__field .shadow {
+  position: absolute;
+  pointer-events: none;
+  top: 0;
+  bottom: 0;
+  width: 100px;
+}
+.app__field .shadow_left {
+  left: 0;
+  background: linear-gradient(to right, white, transparent);
+}
+.app__field .shadow_right {
+  right: 0;
+  background: linear-gradient(to left, white, transparent);
+}
+
+.button-row {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.button {
+  padding: 10px 20px;
+  border-radius: 4px;
+  border: none;
+  font-size: 20px;
+  background: #ddd;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.button:hover,
+.button:focus {
+  background: #ccc;
+}
+
+.button:active {
+  transform: scale(0.9);
+}
+.unit {
+  height: 200px;
+  padding: 10px;
+  position: absolute;
+  width: max-content;
+  transition: transform 0.3s;
+}
+.unit_ally {
+  right: 0;
+}
+.unit .unit__image-wrapper {
+  height: 100px;
+  max-width: 100px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.unit .unit__image-wrapper .unit__image {
+  height: 100%;
+}
+.unit .unit__status-box {
+  position: absolute;
+  background: black;
+  top: 0;
+  left: 0;
+}
+.unit .unit__status-box .unit__status {
+  padding: 2px;
+  border-radius: 2px;
+  font-size: 6px;
+  color: white;
+}
+.field {
+  margin-top: 24px;
+  overflow: hidden;
+  display: flex;
+}
+.field .field__row {
+  flex: 0 0 50%;
+  padding: 0 50px;
+  position: relative;
+}
+.field .field__row_left {
+  justify-content: flex-end;
+}
+.field .field__row_right {
+  justify-content: flex-start;
+}
+* {
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: "PT Sans", sans-serif;
+}
+
+li {
+  list-style: none;
+}
+
+button {
+  border: none;
+}
+
+label {
+  cursor: pointer;
+}
+/*# sourceMappingURL=index.8cf99b1a.css.map */
