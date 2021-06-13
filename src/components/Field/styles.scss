@@ -1,8 +1,9 @@
 .field {
     margin-top: 24px;
+    
+    overflow: hidden;
 
     display: flex;
-    position: relative;
 
     .field__row {
         flex: 0 0 50%;

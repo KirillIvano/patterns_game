@@ -10,16 +10,16 @@
         top: 0;
         bottom: 0;
 
-        width: 300px;
+        width: 100px;
 
         &_left {
             left: 0;
-            background: linear-gradient(to right, rgba(0, 0, 50, 0.5), transparent);
+            background: linear-gradient(to right, white, transparent);
         }
 
         &_right {
             right: 0;
-            background: linear-gradient(to left, rgba(0, 0, 50, 0.5), transparent);
+            background: linear-gradient(to left, white, transparent);
         }
     }
 
