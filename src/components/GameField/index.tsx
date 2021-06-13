@@ -46,7 +46,7 @@ export const GameField = ({history, perksHistory}: AppStateData['game']) => {
 
             {currentIndex === history.length - 1 && (
                 <div style={{textAlign: 'center'}}>
-                    {!history[currentIndex][0][0].length ? 'ALLY' : 'ENEMY'} WON
+                    {!history[currentIndex][0][0].length ? 'ENEMY' : 'ALLY'} WON
                 </div>
             )}
 

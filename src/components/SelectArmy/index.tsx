@@ -63,7 +63,11 @@ export const SelectArmy = ({onSelect}: SelectArmyProps) => {
                 <button
                     className="button"
                     disabled={!army.items.length}
-                    onClick={() => onSelect([army.items, army.items])}
+                    onClick={() => {
+                        const reversed = [...army.items].reverse();
+
+                        onSelect([reversed, reversed]);
+                    }}
                 >
                     Submit
                 </button>
