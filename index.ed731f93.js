@@ -27426,7 +27426,10 @@ try {
       }, "Reset"), /*#__PURE__*/_reactDefault.default.createElement("button", {
         className: "button",
         disabled: !army.items.length,
-        onClick: () => onSelect([army.items, army.items]),
+        onClick: () => {
+          const reversed = [...army.items].reverse();
+          onSelect([reversed, reversed]);
+        },
         __self: undefined,
         __source: {
           fileName: _jsxFileName,
@@ -27438,7 +27441,7 @@ try {
         __self: undefined,
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 72,
+          lineNumber: 76,
           columnNumber: 13
         }
       }, UNIT_KEYS.map(k => /*#__PURE__*/_reactDefault.default.createElement("button", {
@@ -27449,7 +27452,7 @@ try {
         __self: undefined,
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 74,
+          lineNumber: 78,
           columnNumber: 21
         }
       }, "Add ", k))), /*#__PURE__*/_reactDefault.default.createElement("div", {
@@ -27459,28 +27462,28 @@ try {
         __self: undefined,
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 85,
+          lineNumber: 89,
           columnNumber: 13
         }
       }, /*#__PURE__*/_reactDefault.default.createElement("p", {
         __self: undefined,
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 86,
+          lineNumber: 90,
           columnNumber: 17
         }
       }, "maxCost: ", COST), /*#__PURE__*/_reactDefault.default.createElement("p", {
         __self: undefined,
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 87,
+          lineNumber: 91,
           columnNumber: 17
         }
       }, "current: ", army.cost), /*#__PURE__*/_reactDefault.default.createElement("ul", {
         __self: undefined,
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 89,
+          lineNumber: 93,
           columnNumber: 17
         }
       }, "units:", army.items.map((k, i) => /*#__PURE__*/_reactDefault.default.createElement("li", {
@@ -27488,7 +27491,7 @@ try {
         __self: undefined,
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 92,
+          lineNumber: 96,
           columnNumber: 25
         }
       }, k)))))
@@ -27612,7 +27615,7 @@ try {
           lineNumber: 48,
           columnNumber: 17
         }
-      }, !history[currentIndex][0][0].length ? 'ALLY' : 'ENEMY', " WON"), /*#__PURE__*/_reactDefault.default.createElement("div", {
+      }, !history[currentIndex][0][0].length ? 'ENEMY' : 'ALLY', " WON"), /*#__PURE__*/_reactDefault.default.createElement("div", {
         className: "shadow shadow_left",
         __self: undefined,
         __source: {
