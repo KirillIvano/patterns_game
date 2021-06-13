@@ -1,12 +1,6 @@
 import {Army, IArmy} from './interfaces/IArmy';
 import {Ctx, IUnit, IUnitSnapshot, SpecialHistoryEntry} from './interfaces/IUnit';
 import {UnitFactory, UnitKey} from './shared/UnitFactory';
-import {ARCHER_KEY} from './units/Archer';
-import {FELLOW_KEY} from './units/Fellow';
-import {HEALER_KEY} from './units/Healer';
-import {KNIGHT_KEY} from './units/Knight';
-import {MAGE_KEY} from './units/Mage';
-import {WHEEL_KEY} from './units/Wheel';
 import {runWithProbability} from './utils/runWithProbability';
 
 export type UnitDto = {

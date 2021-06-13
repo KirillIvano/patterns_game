@@ -44,6 +44,12 @@ export const GameField = ({history, perksHistory}: AppStateData['game']) => {
                 snapshot={history[currentIndex]}
             />
 
+            {currentIndex === history.length - 1 && (
+                <div style={{textAlign: 'center'}}>
+                    {!history[currentIndex][0][0].length ? 'ALLY' : 'ENEMY'} WON
+                </div>
+            )}
+
             <div className="shadow shadow_left"></div>
             <div className="shadow shadow_right"></div>
         </div>
