@@ -1,6 +1,6 @@
 import {Army, IArmy} from './interfaces/IArmy';
 import {Ctx, IUnit, IUnitSnapshot, SpecialHistoryEntry} from './interfaces/IUnit';
-import {UnitFactory} from './shared/UnitFactory';
+import {UnitFactory, UnitKey} from './shared/UnitFactory';
 import {ARCHER_KEY} from './units/Archer';
 import {FELLOW_KEY} from './units/Fellow';
 import {HEALER_KEY} from './units/Healer';
@@ -91,15 +91,18 @@ export class Game implements IGame {
 
     step(field: IArmy, stepContext: Ctx) {
         const selectedAttackerIterator = field.getRandomHead();
+
         const attackerUnit = selectedAttackerIterator.unit();
         const selectedAttackerSide = selectedAttackerIterator.getSide();
 
         const enemySide = selectedAttackerSide === 'ally' ? 'enemy' : 'ally';
 
-        const enemyUnit = selectedAttackerIterator.currentRow()[enemySide].lookup() as IUnit;
+        const enemyUnit = selectedAttackerIterator.currentRow()[enemySide].lookup();
 
-        attackerUnit.performAttack(enemyUnit);
-        if (enemyUnit.health > 0) enemyUnit.performAttack(attackerUnit);
+        if (enemyUnit) {
+            attackerUnit.performAttack(enemyUnit);
+            if (enemyUnit.health > 0) enemyUnit.performAttack(attackerUnit);
+        }
 
         const rows = field.getAll();
         for (const row of rows) {
@@ -126,25 +129,32 @@ export class Game implements IGame {
     }
 }
 
-const mockAllyField = [
-    [HEALER_KEY, KNIGHT_KEY],
-    [MAGE_KEY, ARCHER_KEY, KNIGHT_KEY],
-    [WHEEL_KEY, KNIGHT_KEY],
-    [FELLOW_KEY, KNIGHT_KEY],
-];
-const mockEnemyField = [
-    [HEALER_KEY, KNIGHT_KEY],
-    [MAGE_KEY, ARCHER_KEY, KNIGHT_KEY],
-    [WHEEL_KEY, KNIGHT_KEY],
-    [FELLOW_KEY, KNIGHT_KEY],
-];
 
-export const startGame = () => {
+const prepareArmy = (army: [UnitKey[], UnitKey[]], size = 4): [UnitKey[][], UnitKey[][]] => {
+    const [fAlly, fEnemy] = army;
+
+    const rAlly = Array.from({length: size}, () => []) as UnitKey[][];
+    const rEnemy = Array.from({length: size}, () => []) as UnitKey[][];
+
+    for (let i = 0; i < fAlly.length; i++) {
+        rAlly[i % 4].push(fAlly[i]);
+    }
+
+    for (let i = 0; i < fEnemy.length; i++) {
+        rEnemy[i % 4].push(fEnemy[i]);
+    }
+
+    return [rAlly, rEnemy];
+};
+
+export const startGame = (army: [UnitKey[], UnitKey[]], size = 4) => {
     const game = new Game();
 
+    const [preparedAlly, preparedEnemy] = prepareArmy(army, size);
+
     const factory = new UnitFactory();
-    const ally = mockAllyField.map(r => r.map(id => factory.get(id)));
-    const enemy = mockEnemyField.map(r => r.map(id => factory.get(id)));
+    const ally = preparedAlly.map(r => r.map(id => factory.get(id)));
+    const enemy = preparedEnemy.map(r => r.map(id => factory.get(id)));
 
     const gameResults = game.run({
         ally,

@@ -87,7 +87,7 @@ export class Army implements IArmy {
     constructor(
         ally: IUnit[][],
         enemies: IUnit[][],
-        formation: GameFormation,
+        private readonly formation: GameFormation,
     ) {
         this._rows = this.prepareRows(ally, enemies);
     }
@@ -132,28 +132,36 @@ export class Army implements IArmy {
     }
 
     getRandomHead(): RowEntry {
-        const rowsLen = this._rows.length;
+        let entry: RowEntry | null = null;
 
-        const rowInd = randomClamp(0, rowsLen - 1);
-        const side = randomBranch() ? 'ally' : 'enemy';
+        while (!entry) {
+            const rowsLen = this._rows.length;
 
-        const unit = this._rows[rowInd][side].lookup() as IUnit;
+            const rowInd = randomClamp(0, rowsLen - 1);
+            const side = randomBranch() ? 'ally' : 'enemy';
 
-        return new RowEntry(
-            unit,
-            side,
-            this._rows[rowInd],
-        );
+            const unit = this._rows[rowInd][side].lookup() as IUnit;
+
+            if (unit) {
+                entry = new RowEntry(
+                    unit,
+                    side,
+                    this._rows[rowInd],
+                );
+            }
+        }
+
+        return entry;
     }
 
 
     cleanup() {
         for (const {ally, enemy} of this._rows) {
-            const allyHead = ally.lookup() as IUnit;
-            const enemyHead = enemy.lookup() as IUnit;
+            const allyHead = ally.lookup();
+            const enemyHead = enemy.lookup();
 
-            if (allyHead.health <= 0) ally.pop();
-            if (enemyHead.health <= 0) enemy.pop();
+            if (allyHead && allyHead.health <= 0) ally.pop();
+            if (enemyHead && enemyHead.health <= 0) enemy.pop();
         }
 
         this.reorder();

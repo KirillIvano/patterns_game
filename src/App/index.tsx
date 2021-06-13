@@ -1,73 +1,41 @@
-import {Field} from 'src/components/Field';
 import React, {useState} from 'react';
 
 import {GameSnapshot, startGame} from 'src/packages/game/Game';
 import './styles.scss';
 import {SpecialHistoryEntry} from 'src/packages/game/interfaces/IUnit';
+import {Preview} from 'src/components/Preview';
+import {UnitKey} from 'src/packages/game/shared/UnitFactory';
+import {SelectArmy} from 'src/components/SelectArmy';
+import {GameField} from 'src/components/GameField';
 
 
-const Preview = ({handleClick}: {handleClick: () => void}) => {
-    return (
-        <div style={{padding: '100px 20px', display: 'flex', justifyContent: 'center'}}>
-            <button className="button" onClick={handleClick}>Generate</button>
-        </div>
-    );
-};
+export type AppStateData = {
+    'preview': null,
+    'select_army': null,
+    'game': {
+        history: GameSnapshot[],
+        perksHistory: SpecialHistoryEntry[][],
+    }
+}
+export type AppStatus = keyof AppStateData;
+
 
 const App = () => {
-    const [history, setHistory] = useState<null | GameSnapshot[]>(null);
-    const [perksHistory, setPerksHistory] = useState<null | SpecialHistoryEntry[][]>(null);
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [appState, setAppState] = useState<AppStatus>('preview');
+    const [appData, setAppData] = useState<AppStateData[typeof appState]>(null);
 
-    const handleClick = () => {
-        const {history, perksHistory} = startGame();
-
-        setHistory(history);
-        setPerksHistory(perksHistory);
+    const runGame = (selectedArmy: [UnitKey[], UnitKey[]]) => {
+        const res = startGame(selectedArmy, 4);
+        setAppData(res);
+        setAppState('game');
     };
 
-    if (!history || !perksHistory) return <Preview handleClick={handleClick} />;
 
-    const handlePrev = () => setCurrentIndex(s => Math.max(0, s - 1));
-    const handleNext = () => setCurrentIndex(s => Math.min(history.length - 1, s + 1));
-    const handleEnd = () => setCurrentIndex(history.length - 1);
+    if (appState === 'preview') return <Preview handleClick={() => setAppState('select_army')} />;
+    if (appState === 'select_army') return <SelectArmy onSelect={runGame} />;
 
     return (
-        <div className="app__field">
-            <div className="button-row">
-                <button
-                    className="button"
-                    disabled={currentIndex <= 0}
-                    onClick={handlePrev}
-                >
-                    prev
-                </button>
-
-                <button
-                    className="button"
-                    disabled={currentIndex >= history.length - 1}
-                    onClick={handleNext}
-                >
-                    next
-                </button>
-
-                <button
-                    className="button"
-                    disabled={currentIndex >= history.length - 1}
-                    onClick={handleEnd}
-                >
-                    end
-                </button>
-            </div>
-
-            <Field
-                prevPerks={perksHistory[currentIndex - 1] ?? []}
-                snapshot={history[currentIndex]}
-            />
-
-            <div className="shadow shadow_left"></div>
-            <div className="shadow shadow_right"></div>
-        </div>
+        <GameField {...(appData as AppStateData['game'])} />
     );
 };
 
