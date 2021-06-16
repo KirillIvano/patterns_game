@@ -123,38 +123,47 @@ export class Game implements IGame {
     }
 }
 
+class GameAdapter {
+    constructor() {}
 
-const prepareArmy = (army: [UnitKey[], UnitKey[]], size = 4): [UnitKey[][], UnitKey[][]] => {
-    const [fAlly, fEnemy] = army;
+    run(army: [UnitKey[], UnitKey[]], size = 4) {
+        const game = new Game();
 
-    const rAlly = Array.from({length: size}, () => []) as UnitKey[][];
-    const rEnemy = Array.from({length: size}, () => []) as UnitKey[][];
+        const [preparedAlly, preparedEnemy] = this.transform(army, size);
 
-    for (let i = 0; i < fAlly.length; i++) {
-        rAlly[i % 4].push(fAlly[i]);
+        const factory = new UnitFactory();
+        const ally = preparedAlly.map(r => r.map(id => factory.get(id)));
+        const enemy = preparedEnemy.map(r => r.map(id => factory.get(id)));
+
+        const gameResults = game.run({
+            ally,
+            enemy,
+            formation: 'single_row',
+        });
+
+        return gameResults;
     }
 
-    for (let i = 0; i < fEnemy.length; i++) {
-        rEnemy[i % 4].push(fEnemy[i]);
-    }
+    private transform = (army: [UnitKey[], UnitKey[]], size = 4): [UnitKey[][], UnitKey[][]] => {
+        const [fAlly, fEnemy] = army;
 
-    return [rAlly, rEnemy];
-};
+        const rAlly = Array.from({length: size}, () => []) as UnitKey[][];
+        const rEnemy = Array.from({length: size}, () => []) as UnitKey[][];
+
+        for (let i = 0; i < fAlly.length; i++) {
+            rAlly[i % 4].push(fAlly[i]);
+        }
+
+        for (let i = 0; i < fEnemy.length; i++) {
+            rEnemy[i % 4].push(fEnemy[i]);
+        }
+
+        return [rAlly, rEnemy];
+    };
+}
 
 export const startGame = (army: [UnitKey[], UnitKey[]], size = 4) => {
-    const game = new Game();
+    const game =  new GameAdapter();
 
-    const [preparedAlly, preparedEnemy] = prepareArmy(army, size);
-
-    const factory = new UnitFactory();
-    const ally = preparedAlly.map(r => r.map(id => factory.get(id)));
-    const enemy = preparedEnemy.map(r => r.map(id => factory.get(id)));
-
-    const gameResults = game.run({
-        ally,
-        enemy,
-        formation: 'single_row',
-    });
-
-    return gameResults;
+    return game.run(army, size);
 };
